@@ -1,0 +1,11 @@
+# run and data directories
+runs/
+data/
+
+
+# other files
+**/.DS_Store
+.idea/
+
+code/.ipynb_checkpoints
+code/__pycache__/
