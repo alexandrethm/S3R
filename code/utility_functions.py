@@ -134,3 +134,16 @@ def get_accuracy(model, x_tensor, y_tensor_real):
         s = 1.0 * s / y_tensor_real.size()[0]
         model.train()
         return s
+
+
+def xavier_init(layer, activation_fct):
+    param = None
+
+    if activation_fct == 'prelu':
+        activation_fct = 'leaky_relu'
+        param = torch.nn.PReLU().weight.item()
+    elif activation_fct == 'swish':
+        activation_fct = 'sigmoid'
+
+    torch.nn.init.xavier_uniform_(layer.weight, gain=torch.nn.init.calculate_gain(activation_fct, param=param))
+    torch.nn.init.constant_(layer.bias, 0.1)

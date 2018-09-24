@@ -98,9 +98,9 @@ x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = convert_to_pytor
 # -------------
 
 regular_net = RegularNet()
-x_y_z_net = XYZNet(activation='prelu')
+x_y_z_net = XYZNet(activation_fct='relu')
 
-net = x_y_z_net
+net = regular_net
 
 # -----------------------------------------------------
 # Loss function & Optimizer

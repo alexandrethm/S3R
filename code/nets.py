@@ -2,6 +2,8 @@ import itertools
 import torch
 from torch import nn
 
+from code.utility_functions import xavier_init
+
 
 class RegularNet(nn.Module):
     """
@@ -187,15 +189,15 @@ class XYZNet(nn.Module):
 
     """
 
-    def __init__(self, activation='relu', nb_sequences=66, nb_classes=14):
+    def __init__(self, activation_fct='relu', nb_sequences=66, nb_classes=14):
         """
         Instantiates the parameters and the modules.
-        :param activation: Activation function used (relu, prelu or swish).
+        :param activation_fct: Activation function used (relu, prelu or swish).
         :param nb_sequences: Number of time sequences in a data sequence.
         :param nb_classes: Number of output classes (gestures).
         """
         super(XYZNet, self).__init__()
-        self.activation_fct = activation
+        self.activation_fct = activation_fct
 
         activations = {
             'relu': nn.ReLU,
@@ -209,7 +211,7 @@ class XYZNet(nn.Module):
         self.conv_high_res_shared = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=22, out_channels=8, kernel_size=7, padding=3),
-                activations[activation](),
+                activations[activation_fct](),
                 pool,
             )
         ])
@@ -217,11 +219,11 @@ class XYZNet(nn.Module):
         self.conv_high_res_individuals = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=8, out_channels=4, kernel_size=7, padding=3),
-                activations[activation](),
+                activations[activation_fct](),
                 pool,
 
                 nn.Conv1d(in_channels=4, out_channels=4, kernel_size=7, padding=3),
-                activations[activation](),
+                activations[activation_fct](),
                 pool,
             )
             for i in range(3)
@@ -232,7 +234,7 @@ class XYZNet(nn.Module):
         self.conv_low_res_shared = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=22, out_channels=8, kernel_size=3, padding=1),
-                activations[activation](),
+                activations[activation_fct](),
                 pool,
             )
         ])
@@ -240,11 +242,11 @@ class XYZNet(nn.Module):
         self.conv_low_res_individuals = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=8, out_channels=4, kernel_size=3, padding=1),
-                activations[activation](),
+                activations[activation_fct](),
                 pool,
 
                 nn.Conv1d(in_channels=4, out_channels=4, kernel_size=3, padding=1),
-                activations[activation](),
+                activations[activation_fct](),
                 pool,
             )
             for i in range(3)
@@ -263,7 +265,7 @@ class XYZNet(nn.Module):
         # The last layer, fully connected
         self.fc_module = nn.Sequential(
             nn.Linear(in_features=30 * 3 * 12, out_features=276),
-            activations[activation](),
+            activations[activation_fct](),
             nn.Linear(in_features=276, out_features=nb_classes),
         )
 
@@ -274,13 +276,11 @@ class XYZNet(nn.Module):
                                       self.residual_modules):
             for layer in module:
                 if layer.__class__.__name__ == "Conv1d":
-                    nn.init.xavier_uniform_(layer.weight, gain=nn.init.calculate_gain('relu'))
-                    nn.init.constant_(layer.bias, 0.1)
+                    xavier_init(layer, activation_fct)
 
         for layer in self.fc_module:
             if layer.__class__.__name__ == "Linear":
-                nn.init.xavier_uniform_(layer.weight, gain=nn.init.calculate_gain('relu'))
-                nn.init.constant_(layer.bias, 0.1)
+                xavier_init(layer, activation_fct)
 
     def forward(self, input):
         """
