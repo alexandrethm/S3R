@@ -7,5 +7,5 @@ data/
 **/.DS_Store
 .idea/
 
-code/.ipynb_checkpoints
-code/__pycache__/
+code_S3R/.ipynb_checkpoints
+code_S3R/__pycache__/

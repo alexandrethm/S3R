@@ -2,7 +2,7 @@ import itertools
 import torch
 from torch import nn
 
-from code.utility_functions import xavier_init
+import code_S3R.utility_functions as custom_utils
 
 
 class RegularNet(nn.Module):
@@ -33,33 +33,40 @@ class RegularNet(nn.Module):
 
     """
 
-    def __init__(self, nb_channels=66, nb_classes=14):
+    def __init__(self, activation_fct='relu', nb_channels=66, nb_classes=14):
         """
         Instantiates the parameters and the modules.
         :param nb_channels: Number of time sequences (channels) in a data sequence.
         :param nb_classes: Number of output classes (gestures).
         """
         super(RegularNet, self).__init__()
+        self.activation_fct = activation_fct
+        activations = {
+            'relu': nn.ReLU,
+            'prelu': nn.PReLU,
+            'swish': Swish,
+        }
+        pool = nn.AvgPool1d(kernel_size=2)
 
         # High resolution branch
         # The first module is shared by all channels
         self.conv_high_res_shared = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=1, out_channels=8, kernel_size=7, padding=3),
-                nn.ReLU(),
-                nn.AvgPool1d(kernel_size=2),
+                activations[activation_fct](),
+                pool,
             )
         ])
         # Each channel has a specific 2nd and 3rd module
         self.conv_high_res_individuals = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=8, out_channels=4, kernel_size=7, padding=3),
-                nn.ReLU(),
-                nn.AvgPool1d(kernel_size=2),
+                activations[activation_fct](),
+                pool,
 
                 nn.Conv1d(in_channels=4, out_channels=4, kernel_size=7, padding=3),
-                nn.ReLU(),
-                nn.AvgPool1d(kernel_size=2),
+                activations[activation_fct](),
+                pool,
             )
             for i in range(nb_channels)
         ])
@@ -69,20 +76,20 @@ class RegularNet(nn.Module):
         self.conv_low_res_shared = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=1, out_channels=8, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.AvgPool1d(kernel_size=2),
+                activations[activation_fct](),
+                pool,
             )
         ])
         # Each channel has a specific 2nd and 3rd module
         self.conv_low_res_individuals = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels=8, out_channels=4, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.AvgPool1d(kernel_size=2),
+                activations[activation_fct](),
+                pool,
 
                 nn.Conv1d(in_channels=4, out_channels=4, kernel_size=3, padding=1),
-                nn.ReLU(),
-                nn.AvgPool1d(kernel_size=2),
+                activations[activation_fct](),
+                pool,
             )
             for i in range(nb_channels)
         ])
@@ -90,9 +97,9 @@ class RegularNet(nn.Module):
         # Residual branch, one for each channel
         self.residual_modules = nn.ModuleList([
             nn.Sequential(
-                nn.AvgPool1d(2),
-                nn.AvgPool1d(2),
-                nn.AvgPool1d(2),
+                pool,
+                pool,
+                pool,
             )
             for i in range(nb_channels)
         ])
@@ -100,7 +107,7 @@ class RegularNet(nn.Module):
         # The last layer, fully connected
         self.fc_module = nn.Sequential(
             nn.Linear(in_features=9 * 66 * 12, out_features=1936),
-            nn.ReLU(),
+            activations[activation_fct](),
             nn.Linear(in_features=1936, out_features=nb_classes),
         )
 
@@ -276,11 +283,11 @@ class XYZNet(nn.Module):
                                       self.residual_modules):
             for layer in module:
                 if layer.__class__.__name__ == "Conv1d":
-                    xavier_init(layer, activation_fct)
+                    custom_utils.xavier_init(layer, activation_fct)
 
         for layer in self.fc_module:
             if layer.__class__.__name__ == "Linear":
-                xavier_init(layer, activation_fct)
+                custom_utils.xavier_init(layer, activation_fct)
 
     def forward(self, input):
         """
@@ -327,7 +334,7 @@ class XYZNet(nn.Module):
         # Concatenates all channels output to a single dimension output.
         # Size : 3 channels * (4 + 4 + 22) outputs/channel * 12 time step/output
         output = torch.cat(channel_output_list, 1)
-        output = output.view(-1, 30 * 3 * 12)
+        output = output.view(-1, custom_utils.num_flat_features(output))
 
         output = self.fc_module(output)
 
