@@ -8,4 +8,5 @@ data/
 .idea/
 
 code_S3R/.ipynb_checkpoints
+.ipynb_checkpoints
 code_S3R/__pycache__/

@@ -2,7 +2,7 @@ import itertools
 import torch
 from torch import nn
 
-import code_S3R.utility_functions as custom_utils
+from code_S3R import my_utils as my_utils
 
 
 class RegularNet(nn.Module):
@@ -44,7 +44,7 @@ class RegularNet(nn.Module):
         activations = {
             'relu': nn.ReLU,
             'prelu': nn.PReLU,
-            'swish': Swish,
+            'swish': my_utils.Swish,
         }
         pool = nn.AvgPool1d(kernel_size=2)
 
@@ -196,11 +196,10 @@ class XYZNet(nn.Module):
 
     """
 
-    def __init__(self, activation_fct='relu', nb_sequences=66, nb_classes=14):
+    def __init__(self, activation_fct='relu', nb_classes=14):
         """
         Instantiates the parameters and the modules.
         :param activation_fct: Activation function used (relu, prelu or swish).
-        :param nb_sequences: Number of time sequences in a data sequence.
         :param nb_classes: Number of output classes (gestures).
         """
         super(XYZNet, self).__init__()
@@ -209,7 +208,7 @@ class XYZNet(nn.Module):
         activations = {
             'relu': nn.ReLU,
             'prelu': nn.PReLU,
-            'swish': Swish,
+            'swish': my_utils.Swish,
         }
         pool = nn.AvgPool1d(kernel_size=2)
 
@@ -276,28 +275,30 @@ class XYZNet(nn.Module):
             nn.Linear(in_features=276, out_features=nb_classes),
         )
 
-        # Initialization --------------------------------------
-        # Xavier init
-        for module in itertools.chain(self.conv_high_res_shared, self.conv_high_res_individuals,
-                                      self.conv_low_res_shared, self.conv_low_res_individuals,
-                                      self.residual_modules):
-            for layer in module:
-                if layer.__class__.__name__ == "Conv1d":
-                    custom_utils.xavier_init(layer, activation_fct)
+        # Xavier initialization
+        my_utils.xavier_init_module(
+            [
+                self.conv_high_res_shared,
+                self.conv_high_res_individuals,
+                self.conv_low_res_shared,
+                self.conv_low_res_individuals,
+                self.residual_modules
+            ],
+            [
+                self.fc_module
+            ],
+            activation_fct
+        )
 
-        for layer in self.fc_module:
-            if layer.__class__.__name__ == "Linear":
-                custom_utils.xavier_init(layer, activation_fct)
-
-    def forward(self, input):
+    def forward(self, input_batch):
         """
         This function performs the actual computations of the network for a forward pass.
 
-        :param input: A tensor of gestures. Its shape is (batch_size x temporal_duration x nb_sequences)
+        :param input_batch: A tensor of gestures. Its shape is (batch_size x temporal_duration x nb_sequences)
         :return: A tensor of results. Its shape is (batch_size x nb_classes)
         """
 
-        _, _, nb_sequences = input.size()
+        _, _, nb_sequences = input_batch.size()
         channel_output_list = []
 
         for i in range(3):
@@ -308,7 +309,7 @@ class XYZNet(nn.Module):
 
             # Get all x_i (or y_i or z_i) time sequences in a list,
             # each one with the following shape : (batch_size, 1, temporal_duration)
-            channel_inputs = [input[:, :, 3 * j + i].unsqueeze(1) for j in range(nb_seq_per_channel)]
+            channel_inputs = [input_batch[:, :, 3 * j + i].unsqueeze(1) for j in range(nb_seq_per_channel)]
 
             # Concatenate the list to get an appropriate shape : (batch_size, nb_sequences/3, temporal_duration),
             # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
@@ -334,45 +335,8 @@ class XYZNet(nn.Module):
         # Concatenates all channels output to a single dimension output.
         # Size : 3 channels * (4 + 4 + 22) outputs/channel * 12 time step/output
         output = torch.cat(channel_output_list, 1)
-        output = output.view(-1, custom_utils.num_flat_features(output))
+        output = output.view(-1, my_utils.num_flat_features(output))
 
         output = self.fc_module(output)
 
         return output
-
-
-class Swish(nn.Module):
-    r"""Applies element-wise the function
-     Swish(x) = x·Sigmoid(βx).
-
-
-    Here :math:`β` is a learnable parameter. When called without arguments, `Swish()` uses a single
-    parameter :math:`β` across all input channels. If called with `Swish(nChannels)`,
-    a separate :math:`β` is used for each input channel.
-
-    Args:
-        num_parameters: number of :math:`β` to learn. Default: 1
-        init: the initial value of :math:`β`. Default: 0.25
-
-    Shape:
-        - Input: :math:`(N, *)` where `*` means, any number of additional
-          dimensions
-        - Output: :math:`(N, *)`, same shape as the input
-
-
-    Examples::
-        >>> m = nn.PReLU()
-        >>> input = torch.randn(2)
-        >>> output = m(input)
-    """
-
-    def __init__(self, num_parameters=1, init=0.25):
-        self.num_parameters = num_parameters
-        super(Swish, self).__init__()
-        self.weight = nn.Parameter(torch.Tensor(num_parameters).fill_(init))
-
-    def forward(self, input):
-        return input * torch.sigmoid(self.weight * input)
-
-    def extra_repr(self):
-        return 'num_parameters={}'.format(self.num_parameters)
