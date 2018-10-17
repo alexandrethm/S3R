@@ -1,12 +1,18 @@
 import itertools
 import time
+import warnings
+
 import torch
+from comet_ml import Experiment
 from scipy import ndimage
 
 import numpy
 import math
 
 from sklearn.utils import shuffle
+from skorch import NeuralNetClassifier
+from skorch.callbacks import Callback
+from skorch.dataset import CVSplit
 from torch import nn
 from code_S3R import my_nets
 
@@ -16,6 +22,120 @@ from code_S3R import my_nets
 # -------------
 
 
+class Swish(nn.Module):
+    """Applies element-wise the function
+     Swish(x) = x·Sigmoid(βx).
+
+
+    Here :math:`β` is a learnable parameter. When called without arguments, `Swish()` uses a single
+    parameter :math:`β` across all input channels. If called with `Swish(nChannels)`,
+    a separate :math:`β` is used for each input channel.
+
+    Args:
+        num_parameters: number of :math:`β` to learn. Default: 1
+        init: the initial value of :math:`β`. Default: 0.25
+
+    Shape:
+        - Input: :math:`(N, *)` where `*` means, any number of additional
+          dimensions
+        - Output: :math:`(N, *)`, same shape as the input
+
+
+    Examples::
+        >>> m = Swish()
+        >>> input = torch.randn(2)
+        >>> output = m(input)
+    """
+
+    def __init__(self, num_parameters=1, init=0.25):
+        self.num_parameters = num_parameters
+        super(Swish, self).__init__()
+        self.weight = nn.Parameter(torch.Tensor(num_parameters).fill_(init))
+
+    def forward(self, input):
+        return input * torch.sigmoid(self.weight * input)
+
+    def extra_repr(self):
+        return 'num_parameters={}'.format(self.num_parameters)
+
+
+class MyCallback(Callback):
+    """
+    Calls comet.ml methods to log data at each run.
+    """
+
+    experiment = None
+
+    def log_hyper_params(self, params):
+        """
+        Create a comet.ml experiment and log hyper-parameters. To be called by the net,
+        each time its params are modified.
+        :param params:
+        :return:
+        """
+        self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
+        print('params logged : ', params)
+        self.experiment.log_multiple_params(params)
+
+    def on_epoch_end(self, net, **kwargs):
+        """
+        Log epoch metrics to comet.ml
+        :param net:
+        :param kwargs:
+        :return:
+        """
+        data = net.history[-1]
+        self.experiment.log_multiple_metrics(
+            dic=dict((key, data[key]) for key in [
+                'valid_acc',
+                'valid_loss',
+                'train_loss',
+            ]),
+            step=data['epoch']
+        )
+
+
+class MyNeuralNetClassifier(NeuralNetClassifier):
+    """
+    Classic NeuralNetClassifier, with one addition : it automatically calls the `my_cb` callback to log
+    parameters when they are modified.
+    Don't forget to specify which keys to log when initializing the net.
+    """
+
+    def __init__(self, module, *args, criterion=torch.nn.NLLLoss, train_split=CVSplit(5, stratified=True),
+                 log_to_comet_ml=True, keys_to_log=None, **kwargs):
+        super().__init__(module, *args, criterion=criterion, train_split=train_split, **kwargs)
+        self.log_to_comet_ml = log_to_comet_ml
+        self.keys_to_log = keys_to_log
+
+    def set_params(self, **kwargs):
+        """
+        In addition to settings new params, this method logs the new params to comet_ml (as a new experiment)
+        via the `my_cb` callback and each time the method is called.
+        :param kwargs:
+        """
+        result = super().set_params(**kwargs)
+
+        # get and log the new params to a new comet_ml experiment, thanks to the `my_cb` callback
+        params = self.get_params()
+        params_to_log = dict((key, params[key]) for key in self.keys_to_log)
+
+        my_cb = None
+        for cb in self.callbacks:
+            if cb[0] is 'my_cb':
+                my_cb = cb[1]
+
+        if my_cb is not None:
+            my_cb.log_hyper_params(params_to_log)
+            print('params logged to comet_ml :', params_to_log)
+        elif self.log_to_comet_ml:
+            warnings.warn('Could not log net params to comet_ml, as no `my_cb` callback was found.')
+
+        # result should be self
+        return result
+
+
+# deprecated
 def perform_training(x_train, y_train, x_test, y_test, hyper_params, experiment):
     # -------------
     # Network instantiation
@@ -26,7 +146,7 @@ def perform_training(x_train, y_train, x_test, y_test, hyper_params, experiment)
     # Loss function & Optimizer
     # -----------------------------------------------------
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(params=net.parameters(), lr=hyper_params['learning_rate'])
+    optimizer = torch.optim.Adam(params=net.parameters(), lr=hyper_params['lr'])
 
     # -------------
     # Training
@@ -41,7 +161,7 @@ def perform_training(x_train, y_train, x_test, y_test, hyper_params, experiment)
         batch_size=hyper_params['batch_size']
     )  # list of output tensors containing the index of the right gesture, size : (batch_size)
 
-    for epoch in range(hyper_params['num_epochs']):
+    for epoch in range(hyper_params['max_epochs']):
         current_loss = 0.0
 
         for i, (x_train_batch, y_train_batch) in enumerate(zip(x_train_batches, y_train_batches)):
@@ -88,43 +208,6 @@ def perform_training(x_train, y_train, x_test, y_test, hyper_params, experiment)
     #     accuracy = 100 * correct / total
     #     experiment.log_metric('accuracy', accuracy)
     #     print('Test Accuracy of the model on the {} test images: {}%'.format(y_test.size(0), accuracy))
-
-
-class Swish(nn.Module):
-    r"""Applies element-wise the function
-     Swish(x) = x·Sigmoid(βx).
-
-
-    Here :math:`β` is a learnable parameter. When called without arguments, `Swish()` uses a single
-    parameter :math:`β` across all input channels. If called with `Swish(nChannels)`,
-    a separate :math:`β` is used for each input channel.
-
-    Args:
-        num_parameters: number of :math:`β` to learn. Default: 1
-        init: the initial value of :math:`β`. Default: 0.25
-
-    Shape:
-        - Input: :math:`(N, *)` where `*` means, any number of additional
-          dimensions
-        - Output: :math:`(N, *)`, same shape as the input
-
-
-    Examples::
-        >>> m = nn.PReLU()
-        >>> input = torch.randn(2)
-        >>> output = m(input)
-    """
-
-    def __init__(self, num_parameters=1, init=0.25):
-        self.num_parameters = num_parameters
-        super(Swish, self).__init__()
-        self.weight = nn.Parameter(torch.Tensor(num_parameters).fill_(init))
-
-    def forward(self, input):
-        return input * torch.sigmoid(self.weight * input)
-
-    def extra_repr(self):
-        return 'num_parameters={}'.format(self.num_parameters)
 
 
 # -------------
@@ -181,10 +264,6 @@ def preprocess_data(x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_2
                                                                                     y_train_28, y_test_14, y_test_28)
     x_train, x_test = resize_sequences_length(x_train, x_test, final_length=temporal_duration)
 
-    return x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28
-
-
-def convert_to_pytorch_tensors(x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28):
     y_train_14 = numpy.array(y_train_14)
     y_train_28 = numpy.array(y_train_28)
     y_test_14 = numpy.array(y_test_14)
@@ -196,6 +275,10 @@ def convert_to_pytorch_tensors(x_train, x_test, y_train_14, y_train_28, y_test_1
     y_test_14 = y_test_14 - 1
     y_test_28 = y_test_28 - 1
 
+    return x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28
+
+
+def convert_to_pytorch_tensors(x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28):
     x_train = torch.from_numpy(x_train)
     x_test = torch.from_numpy(x_test)
     y_train_14 = torch.from_numpy(y_train_14)

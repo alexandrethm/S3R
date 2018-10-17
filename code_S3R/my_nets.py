@@ -196,7 +196,7 @@ class XYZNet(nn.Module):
 
     """
 
-    def __init__(self, activation_fct='relu', nb_classes=14):
+    def __init__(self, activation_fct='relu', nb_classes=14, grid_search_params=None):
         """
         Instantiates the parameters and the modules.
         :param activation_fct: Activation function used (relu, prelu or swish).
