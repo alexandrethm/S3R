@@ -1,20 +1,56 @@
 import itertools
-import time
-import warnings
 
+import numpy
 import torch
 from comet_ml import Experiment
 from scipy import ndimage
-
-import numpy
-import math
-
 from sklearn.utils import shuffle
-from skorch import NeuralNetClassifier
 from skorch.callbacks import Callback
-from skorch.dataset import CVSplit
 from torch import nn
-from code_S3R import my_nets
+
+
+# -------------
+# Logging
+# -------------
+
+class MyCallback(Callback):
+    """
+    Calls comet.ml methods to log data at each run.
+    """
+
+    experiment = None
+
+    def __init__(self, params_to_log) -> None:
+        self.params_to_log = params_to_log
+
+    def on_train_begin(self, net, **kwargs):
+        """
+        Create a comet.ml experiment and log hyper-parameters specified in params_to_log.
+        :param net:
+        :return:
+        """
+        params = net.get_params()
+        params_to_log = dict((key, params[key]) for key in self.params_to_log)
+        self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
+        self.experiment.log_multiple_params(params_to_log)
+        print('params logged : ', params_to_log)
+
+    def on_epoch_end(self, net, **kwargs):
+        """
+        Log epoch metrics to comet.ml
+        :param net:
+        :param kwargs:
+        :return:
+        """
+        data = net.history[-1]
+        self.experiment.log_multiple_metrics(
+            dic=dict((key, data[key]) for key in [
+                'valid_acc',
+                'valid_loss',
+                'train_loss',
+            ]),
+            step=data['epoch']
+        )
 
 
 # -------------
@@ -59,155 +95,46 @@ class Swish(nn.Module):
         return 'num_parameters={}'.format(self.num_parameters)
 
 
-class MyCallback(Callback):
+def xavier_init(layer, activation_fct):
+    param = None
+
+    if activation_fct == 'prelu':
+        activation_fct = 'leaky_relu'
+        param = torch.nn.PReLU().weight.item()
+    elif activation_fct == 'swish':
+        activation_fct = 'sigmoid'
+
+    torch.nn.init.xavier_uniform_(layer.weight, gain=torch.nn.init.calculate_gain(activation_fct, param=param))
+    torch.nn.init.constant_(layer.bias, 0.1)
+
+
+def num_flat_features(x):
     """
-    Calls comet.ml methods to log data at each run.
+    :param x: An input tensor, generally already processed with conv layers
+    :return: The number of flat features of this tensor (except the batch dimension), that can be fed to a fully connected layer.
     """
-
-    experiment = None
-
-    def log_hyper_params(self, params):
-        """
-        Create a comet.ml experiment and log hyper-parameters. To be called by the net,
-        each time its params are modified.
-        :param params:
-        :return:
-        """
-        self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
-        print('params logged : ', params)
-        self.experiment.log_multiple_params(params)
-
-    def on_epoch_end(self, net, **kwargs):
-        """
-        Log epoch metrics to comet.ml
-        :param net:
-        :param kwargs:
-        :return:
-        """
-        data = net.history[-1]
-        self.experiment.log_multiple_metrics(
-            dic=dict((key, data[key]) for key in [
-                'valid_acc',
-                'valid_loss',
-                'train_loss',
-            ]),
-            step=data['epoch']
-        )
+    size = x.size()[1:]  # all dimensions except the batch dimension
+    num_features = 1
+    for s in size:
+        num_features *= s
+    return num_features
 
 
-class MyNeuralNetClassifier(NeuralNetClassifier):
+def xavier_init_module(module_lists, modules, activation_fct):
     """
-    Classic NeuralNetClassifier, with one addition : it automatically calls the `my_cb` callback to log
-    parameters when they are modified.
-    Don't forget to specify which keys to log when initializing the net.
+    Perform xavier_init on Conv1d and Linear layers insides the specified modules.
+    :param module_lists: list of ModuleList objects
+    :param modules: list of Module objects
+    :param activation_fct:
     """
+    for module in itertools.chain(module_lists):
+        for layer in module:
+            if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
+                xavier_init(layer, activation_fct)
 
-    def __init__(self, module, *args, criterion=torch.nn.NLLLoss, train_split=CVSplit(5, stratified=True),
-                 log_to_comet_ml=True, keys_to_log=None, **kwargs):
-        super().__init__(module, *args, criterion=criterion, train_split=train_split, **kwargs)
-        self.log_to_comet_ml = log_to_comet_ml
-        self.keys_to_log = keys_to_log
-
-    def set_params(self, **kwargs):
-        """
-        In addition to settings new params, this method logs the new params to comet_ml (as a new experiment)
-        via the `my_cb` callback and each time the method is called.
-        :param kwargs:
-        """
-        result = super().set_params(**kwargs)
-
-        # get and log the new params to a new comet_ml experiment, thanks to the `my_cb` callback
-        params = self.get_params()
-        params_to_log = dict((key, params[key]) for key in self.keys_to_log)
-
-        my_cb = None
-        for cb in self.callbacks:
-            if cb[0] is 'my_cb':
-                my_cb = cb[1]
-
-        if my_cb is not None:
-            my_cb.log_hyper_params(params_to_log)
-            print('params logged to comet_ml :', params_to_log)
-        elif self.log_to_comet_ml:
-            warnings.warn('Could not log net params to comet_ml, as no `my_cb` callback was found.')
-
-        # result should be self
-        return result
-
-
-# deprecated
-def perform_training(x_train, y_train, x_test, y_test, hyper_params, experiment):
-    # -------------
-    # Network instantiation
-    # -------------
-    net = my_nets.XYZNet(activation_fct=hyper_params['activation_fct'])
-
-    # -----------------------------------------------------
-    # Loss function & Optimizer
-    # -----------------------------------------------------
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(params=net.parameters(), lr=hyper_params['lr'])
-
-    # -------------
-    # Training
-    # -------------
-    # Prepare all mini-batches
-    x_train_batches = batch(
-        x_train,
-        batch_size=hyper_params['batch_size']
-    )  # list of tensors (batch_size, temporal_duration, nb_sequences=66)
-    y_train_batches = batch(
-        y_train,
-        batch_size=hyper_params['batch_size']
-    )  # list of output tensors containing the index of the right gesture, size : (batch_size)
-
-    for epoch in range(hyper_params['max_epochs']):
-        current_loss = 0.0
-
-        for i, (x_train_batch, y_train_batch) in enumerate(zip(x_train_batches, y_train_batches)):
-            # zero the gradient parameters
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs = net(
-                x_train_batch)  # outputs is a tensor (batch_size, nb_classes=14) with the proba of each gesture
-            loss = criterion(outputs, y_train_batch)
-            loss.backward()
-            optimizer.step()
-
-            # for an easy access
-            current_loss += loss.item()
-
-        # Log to Comet.ml
-        accuracy_test = get_accuracy(net, x_test, y_test)
-        accuracy_train = get_accuracy(net, x_train, y_train)
-        experiment.log_multiple_metrics({
-            'accuracy_test': accuracy_test,
-            'accuracy_train': accuracy_train,
-            'loss': current_loss,
-        }, step=epoch)
-
-        print('Epoch [{}/{}] | Loss : {:.4e} | Accuracy_train : {:.4e} | Accuracy_test : {:.4e}'
-              .format(epoch + 1, hyper_params['num_epochs'], current_loss, accuracy_train, accuracy_test))
-
-    # -------
-    # Requires a real test set, distinct from the training set (used for training the network)
-    # and the validation set (used to find the parameters)
-    # -------
-    # with experiment.test():
-    #     # x_test.size : (nb_test_gestures, temporal_duration, nb_sequences=66)
-    #     # y_test.size : (nb_test_gestures), containing indexes of the right gestures
-    #     outputs = net(x_test)  # outputs.size : (nb_test_gestures, nb_classes=14), containing probas of each gesture
-    #     _, predicted = torch.max(outputs.data, 1)
-    #
-    #     total = y_test.size(0)
-    #     correct = (predicted == y_test).sum()  # correct.size : (nb_test_gestures), containing 1 if
-    # prediction was right
-    #     correct = correct.item()
-    #
-    #     accuracy = 100 * correct / total
-    #     experiment.log_metric('accuracy', accuracy)
-    #     print('Test Accuracy of the model on the {} test images: {}%'.format(y_test.size(0), accuracy))
+    for layer in itertools.chain(modules):
+        if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
+            xavier_init(layer, activation_fct)
 
 
 # -------------
@@ -296,85 +223,20 @@ def convert_to_pytorch_tensors(x_train, x_test, y_train_14, y_train_28, y_test_1
     return x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28
 
 
-# -------------
-# Misc.
-# -------------
-
-def batch(tensor, batch_size=32):
-    """Return a list of (mini) batches"""
-    tensor_list = []
-    length = tensor.shape[0]
-    i = 0
-    while True:
-        if (i + 1) * batch_size >= length:
-            tensor_list.append(tensor[i * batch_size: length])
-            return tensor_list
-        tensor_list.append(tensor[i * batch_size: (i + 1) * batch_size])
-        i += 1
-
-
-def time_since(since):
-    now = time.time()
-    s = now - since
-    m = math.floor(s / 60)
-    s -= m * 60
-    return '{:02d}m {:02d}s'.format(int(m), int(s))
-
-
-def get_accuracy(model, x_tensor, y_tensor_real):
+def get_param_keys(params):
     """
-    Params:
-        :param model: a **pytorch** model
-        :param x_tensor:  a **pytorch** tensor/Variable
-        :param y_tensor_real:  a **pytorch** tensor/Variable
+    :param params: dict of parameters, or list containing dicts of parameters
+    :return: all keys contained inside the dict or inside the dicts of the list
     """
-    with torch.no_grad():
-        model.eval()
-        predicted = model(x_tensor)
-        predicted = predicted.max(dim=1)[1]
-        s = (predicted.long() == y_tensor_real.long()).sum().item()
-        s = 1.0 * s / y_tensor_real.size()[0]
-        model.train()
-        return s
+    if params.__class__ == dict:
+        params_keys = params.keys()
+    elif params.__class__ == list:
+        params_keys = []
+        for i in range(len(params)):
+            for key in params[i]:
+                if key not in params_keys:
+                    params_keys.append(key)
+    else:
+        params_keys = []
 
-
-def xavier_init(layer, activation_fct):
-    param = None
-
-    if activation_fct == 'prelu':
-        activation_fct = 'leaky_relu'
-        param = torch.nn.PReLU().weight.item()
-    elif activation_fct == 'swish':
-        activation_fct = 'sigmoid'
-
-    torch.nn.init.xavier_uniform_(layer.weight, gain=torch.nn.init.calculate_gain(activation_fct, param=param))
-    torch.nn.init.constant_(layer.bias, 0.1)
-
-
-def num_flat_features(x):
-    """
-    :param x: An input tensor, generally already processed with conv layers
-    :return: The number of flat features of this tensor (except the batch dimension), that can be fed to a fully connected layer.
-    """
-    size = x.size()[1:]  # all dimensions except the batch dimension
-    num_features = 1
-    for s in size:
-        num_features *= s
-    return num_features
-
-
-def xavier_init_module(module_lists, modules, activation_fct):
-    """
-    Perform xavier_init on Conv1d and Linear layers insides the specified modules.
-    :param module_lists: list of ModuleList objects
-    :param modules: list of Module objects
-    :param activation_fct:
-    """
-    for module in itertools.chain(module_lists):
-        for layer in module:
-            if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
-                xavier_init(layer, activation_fct)
-
-    for layer in itertools.chain(modules):
-        if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
-            xavier_init(layer, activation_fct)
+    return list(params_keys)

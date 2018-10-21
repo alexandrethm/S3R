@@ -2,20 +2,24 @@ import numpy as np
 import torch
 import comet_ml
 from sklearn.model_selection import *
+from skorch import NeuralNetClassifier
 
 from code_S3R import my_utils, my_nets
 
-hyper_params = {
+grid_search_params = [
+    {
+        'lr': [1e-3], 'max_epochs': [200], 'batch_size': [32, 64],
+        'module__activation_fct': ['relu', 'prelu', 'swish'],
+    },
+    {
+        'lr': [1e-4], 'max_epochs': [400], 'batch_size': [32, 64],
+        'module__activation_fct': ['relu', 'prelu', 'swish'],
+    },
+]
+
+other_params = {
     'net_type': 'xyz',
     'temporal_duration': 100,
-}
-
-grid_search_params = {
-    'lr': [1e-4, 1e-3],
-    'max_epochs': [200],
-    'batch_size': [32, 64],
-
-    'module__activation_fct': ['relu', 'prelu', 'swish'],
 }
 
 # -------------
@@ -29,7 +33,7 @@ x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = my_utils.preproc
                                                                                          y_train_14,
                                                                                          y_train_28,
                                                                                          y_test_14, y_test_28,
-                                                                                         temporal_duration=hyper_params[
+                                                                                         temporal_duration=other_params[
                                                                                              'temporal_duration'])
 
 # Feeding it PyTorch tensors doesn't seem to work, but numpy arrays with the right format is okay
@@ -46,19 +50,16 @@ y_test = y_test_14
 # -------------
 # Perform grid search
 # -------------
-
-net = my_utils.MyNeuralNetClassifier(
+net = NeuralNetClassifier(
     module=my_nets.XYZNet,
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
-        ('my_cb', my_utils.MyCallback()),
+        ('my_cb', my_utils.MyCallback(params_to_log=my_utils.get_param_keys(grid_search_params))),
     ],
-    keys_to_log=list(grid_search_params.keys()),
 )
 
-gs = RandomizedSearchCV(estimator=net, param_distributions=grid_search_params, refit=False, scoring='accuracy',
-                        verbose=2)
+gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=0)
 
 gs.fit(x_train, y_train)
 print(gs.best_score_, gs.best_params_)
