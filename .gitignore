@@ -9,7 +9,7 @@ data
 # other files
 **/.DS_Store
 .idea
+**/__pycache__
 
 code_S3R/.ipynb_checkpoints
 .ipynb_checkpoints
-code_S3R/__pycache__
