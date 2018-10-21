@@ -1,12 +1,15 @@
 # run and data directories
-run-data/
-data/
+# exclude everything in run-data directory
+run-data/*
+# except grid searches results
+!run-data/grid_searches
+data
 
 
 # other files
 **/.DS_Store
-.idea/
+.idea
 
 code_S3R/.ipynb_checkpoints
 .ipynb_checkpoints
-code_S3R/__pycache__/
+code_S3R/__pycache__

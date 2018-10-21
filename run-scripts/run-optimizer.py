@@ -11,9 +11,9 @@ hyper_params = {
 }
 
 grid_search_params = {
-    'lr': [1e-3, 1e-2],
-    'max_epochs': [10],
-    'batch_size': [16, 32],
+    'lr': [1e-4, 1e-3],
+    'max_epochs': [200],
+    'batch_size': [32, 64],
 
     'module__activation_fct': ['relu', 'prelu', 'swish'],
 }
