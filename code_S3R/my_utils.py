@@ -1,4 +1,7 @@
 import itertools
+from datetime import datetime
+
+import pandas
 
 import numpy
 import torch
@@ -33,7 +36,6 @@ class MyCallback(Callback):
         params_to_log = dict((key, params[key]) for key in self.params_to_log)
         self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
         self.experiment.log_multiple_params(params_to_log)
-        print('params logged : ', params_to_log)
 
     def on_epoch_end(self, net, **kwargs):
         """
@@ -51,6 +53,36 @@ class MyCallback(Callback):
             ]),
             step=data['epoch']
         )
+
+
+def save_and_print_results(cv_results, grid_search_params):
+    """
+    Save results as a csv file.
+    Print :
+        - Best score with the corresponding params
+        - Filename of the csv file
+        - All the results just in case
+    :param cv_results: A GridSearchCV.cv_results_ attribute
+    :param grid_search_params:
+    :return:
+    """
+    results = pandas.DataFrame(cv_results).sort_values('rank_test_score')
+
+    # select filename and important columns to save
+    file_name = 'grid_{:%d%m_%H%M}'.format(datetime.now())
+    columns = ['rank_test_score', 'mean_test_score', 'mean_train_score', 'std_test_score', 'std_train_score']
+    for key in get_param_keys(grid_search_params):
+        columns.append('param_' + key)
+
+    # save important results
+    results.to_csv(path_or_buf='../run-data/grid_searches/{}.csv'.format(file_name),
+                   columns=columns, decimal=',')
+    # save all results, without excluding some columns
+    results.to_csv(path_or_buf='../run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name), decimal=',')
+
+    print('------')
+    print('Results saved as {}.csv'.format(file_name))
+    print('All results just in case :\n', cv_results)
 
 
 # -------------
