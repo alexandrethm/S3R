@@ -39,7 +39,7 @@ class XYZNet(nn.Module):
         """
         super(XYZNet, self).__init__()
         self.activation_fct = activation_fct
-        self.dropout = 0
+        self.dropout = dropout
 
         activations = {
             'relu': nn.ReLU,
