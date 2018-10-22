@@ -31,7 +31,7 @@ class XYZNet(nn.Module):
 
     """
 
-    def __init__(self, activation_fct='relu', nb_classes=14):
+    def __init__(self, activation_fct='relu', dropout=0, nb_classes=14):
         """
         Instantiates the parameters and the modules.
         :param activation_fct: Activation function used (relu, prelu or swish).
@@ -39,6 +39,7 @@ class XYZNet(nn.Module):
         """
         super(XYZNet, self).__init__()
         self.activation_fct = activation_fct
+        self.dropout = 0
 
         activations = {
             'relu': nn.ReLU,
@@ -54,6 +55,7 @@ class XYZNet(nn.Module):
                 nn.Conv1d(in_channels=22, out_channels=8, kernel_size=7, padding=3),
                 activations[activation_fct](),
                 pool,
+                nn.Dropout(self.dropout),
             )
         ])
         # Each channel has a specific 2nd and 3rd module
@@ -62,10 +64,12 @@ class XYZNet(nn.Module):
                 nn.Conv1d(in_channels=8, out_channels=4, kernel_size=7, padding=3),
                 activations[activation_fct](),
                 pool,
+                nn.Dropout(self.dropout),
 
                 nn.Conv1d(in_channels=4, out_channels=4, kernel_size=7, padding=3),
                 activations[activation_fct](),
                 pool,
+                nn.Dropout(self.dropout),
             )
             for i in range(3)
         ])
@@ -77,6 +81,7 @@ class XYZNet(nn.Module):
                 nn.Conv1d(in_channels=22, out_channels=8, kernel_size=3, padding=1),
                 activations[activation_fct](),
                 pool,
+                nn.Dropout(self.dropout),
             )
         ])
         # Each channel has a specific 2nd and 3rd module
@@ -85,10 +90,12 @@ class XYZNet(nn.Module):
                 nn.Conv1d(in_channels=8, out_channels=4, kernel_size=3, padding=1),
                 activations[activation_fct](),
                 pool,
+                nn.Dropout(self.dropout),
 
                 nn.Conv1d(in_channels=4, out_channels=4, kernel_size=3, padding=1),
                 activations[activation_fct](),
                 pool,
+                nn.Dropout(self.dropout),
             )
             for i in range(3)
         ])
@@ -107,11 +114,13 @@ class XYZNet(nn.Module):
         self.fc_module = nn.Sequential(
             nn.Linear(in_features=30 * 3 * 12, out_features=276),
             activations[activation_fct](),
+            nn.Dropout(self.dropout),
+
             nn.Linear(in_features=276, out_features=nb_classes),
         )
 
         # Xavier initialization
-        my_utils.xavier_init_module(
+        my_utils.perform_xavier_init(
             [
                 self.conv_high_res_shared,
                 self.conv_high_res_individuals,

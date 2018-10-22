@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import comet_ml
 from sklearn.model_selection import *
 from skorch import NeuralNetClassifier
 
@@ -7,12 +8,10 @@ from code_S3R import my_utils, my_nets
 
 grid_search_params = [
     {
-        'lr': [0.001], 'max_epochs': [200], 'batch_size': [32, 64],
-        'module__activation_fct': ['relu', 'prelu', 'swish'],
-    },
-    {
-        'lr': [0.0001], 'max_epochs': [500], 'batch_size': [32, 64],
-        'module__activation_fct': ['relu', 'prelu', 'swish'],
+        'max_epochs': [600], 'batch_size': [8, 32, 128],
+        'lr': [0.0001],
+        'module__dropout': [0, 0.2, 0.4],
+        'module__activation_fct': ['relu', 'prelu'],
     },
 ]
 
@@ -49,6 +48,7 @@ y_test = y_test_14
 # -------------
 # Perform grid search
 # -------------
+
 net = NeuralNetClassifier(
     module=my_nets.XYZNet,
     criterion=torch.nn.CrossEntropyLoss,
@@ -59,8 +59,13 @@ net = NeuralNetClassifier(
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
-gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2)
+gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2,
+                  error_score=0)
 
 gs.fit(x_train, y_train)
 
-my_utils.save_and_print_results(grid_search=gs, grid_search_params=grid_search_params)
+# -------------
+# Save and log results
+# -------------
+
+my_utils.save_and_print_results(cv_results=gs.cv_results_, grid_search_params=grid_search_params)

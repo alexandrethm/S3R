@@ -152,7 +152,7 @@ def num_flat_features(x):
     return num_features
 
 
-def xavier_init_module(module_lists, modules, activation_fct):
+def perform_xavier_init(module_lists, modules, activation_fct):
     """
     Perform xavier_init on Conv1d and Linear layers insides the specified modules.
     :param module_lists: list of ModuleList objects
