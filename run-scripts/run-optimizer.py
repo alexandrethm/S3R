@@ -11,7 +11,7 @@ grid_search_params = [
         'max_epochs': [600], 'batch_size': [8, 32, 128],
         'lr': [0.0001],
         'module__dropout': [0, 0.2, 0.4],
-        'module__activation_fct': ['relu', 'prelu'],
+        'module__activation_fct': ['prelu'],
     },
 ]
 
