@@ -8,9 +8,21 @@ from code_S3R import my_utils, my_nets
 
 grid_search_params = [
     {
-        'max_epochs': [600], 'batch_size': [8, 32, 128],
+        'max_epochs': [600], 'batch_size': [8, 32],
         'lr': [0.0001],
-        'module__dropout': [0, 0.2, 0.4],
+        'module__dropout': [0.1],
+        'module__activation_fct': ['prelu'],
+    },
+    {
+        'max_epochs': [800], 'batch_size': [8, 32],
+        'lr': [0.0001],
+        'module__dropout': [0.4],
+        'module__activation_fct': ['prelu'],
+    },
+    {
+        'max_epochs': [1000], 'batch_size': [128],
+        'lr': [0.0001],
+        'module__dropout': [0.1, 0.2, 0.4],
         'module__activation_fct': ['prelu'],
     },
 ]
