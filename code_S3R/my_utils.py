@@ -36,6 +36,7 @@ class MyCallback(Callback):
         params_to_log = dict((key, params[key]) for key in self.params_to_log)
         self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
         self.experiment.log_multiple_params(params_to_log)
+        self.experiment.set_model_graph(net.__str__())
 
     def on_epoch_end(self, net, **kwargs):
         """
@@ -78,7 +79,8 @@ def save_and_print_results(cv_results, grid_search_params):
     results.to_csv(path_or_buf='../run-data/grid_searches/{}.csv'.format(file_name),
                    columns=columns, decimal=',')
     # save all results, without excluding some columns
-    results.to_csv(path_or_buf='../run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name), decimal=',')
+    results.to_csv(path_or_buf='../run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name),
+                   decimal=',')
 
     print('------')
     print('Results saved as {}.csv'.format(file_name))
@@ -167,6 +169,82 @@ def perform_xavier_init(module_lists, modules, activation_fct):
     for layer in itertools.chain(modules):
         if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
             xavier_init(layer, activation_fct)
+
+
+def get_preprocess_module(net_type, net_shape):
+    if net_type is 'linear_combination':
+        m, n = net_shape
+        return nn.Linear(66, m * n)
+    else:
+        return None
+
+
+def get_network_shape(net_type, net_shape):
+    """
+    :param net_shape: (nb_seq_per_pipeline, nb_pipelines) Only used for `linear_combination` networks, otherwise
+    it's already determined by the network type.
+    :param net_type: str
+    :return: m (number of of channels per pipeline), n (number of pipelines).
+    With each pipeline fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where nb_sequences is
+    the total number of sequences provided as input.
+    """
+    if net_type is 'xyz':
+        return 22, 3
+    elif net_type is 'regular':
+        return 1, 66
+    elif net_type is 'linear_combination':
+        return net_shape
+
+
+def get_pipeline_inputs(input_batch, net_type, net_shape):
+    """
+    Get inputs in the right shape, according to the network type specified.
+
+    :param input_batch: A tensor of gestures. Its shape is (batch_size, temporal_duration, nb_sequences)
+    :param net_type: str
+    :return: A list containing the inputs for each pipeline. Its shape is [n x (batch_size, m, temporal_duration)]
+    """
+    _, _, nb_sequences = input_batch.size()
+    m, n = get_network_shape(net_type, net_shape)
+    # make sure the dimensions are right
+    assert m * n == nb_sequences, 'Number of sequences in batch input does not match network shape'
+
+    pipeline_inputs = []
+
+    if net_type is 'xyz':
+        for i in range(n):
+            # Get all x_i (or y_i or z_i) time sequences in a list,
+            # each one with the following shape : (batch_size, 1, temporal_duration)
+            pipeline_input = [input_batch[:, :, 3 * j + i].unsqueeze(1) for j in range(m)]
+
+            # Concatenate the list to get an appropriate shape : (batch_size, m=22, temporal_duration),
+            # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
+            pipeline_input = torch.cat(pipeline_input, 1)
+
+            pipeline_inputs.append(pipeline_input)
+        return pipeline_inputs
+
+    elif net_type is 'regular':
+        # Get all time sequences in a list,
+        # each one with the following shape : (batch_size, m=1, temporal_duration)
+        # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
+        pipeline_inputs = [input_batch[:, :, j].unsqueeze(1) for j in range(n)]
+
+        return pipeline_inputs
+
+    elif net_type is 'linear_combination':
+        # Split the input batch into a list of n pipeline_input
+        for i in range(n):
+            # Add m time sequences to the input,
+            # each one with the following shape : (batch_size, 1, temporal_duration)
+            pipeline_input = [input_batch[:, :, i * m + j].unsqueeze(1) for j in range(m)]
+
+            # Concatenate the list to get an appropriate shape : (batch_size, m, temporal_duration),
+            # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
+            pipeline_input = torch.cat(pipeline_input, 1)
+
+            pipeline_inputs.append(pipeline_input)
+        return pipeline_inputs
 
 
 # -------------

@@ -8,27 +8,23 @@ from code_S3R import my_utils, my_nets
 
 grid_search_params = [
     {
-        'max_epochs': [600], 'batch_size': [8, 32],
+        'max_epochs': [300], 'batch_size': [32],
         'lr': [0.0001],
         'module__dropout': [0.1],
         'module__activation_fct': ['prelu'],
+        'module__net_type': ['linear_combination'],
+        'module__net_shape': [(11, 2), (22, 3), (66, 1)],  # (nb_seq_per_pipeline, nb_pipeline)
     },
     {
-        'max_epochs': [800], 'batch_size': [8, 32],
+        'max_epochs': [300], 'batch_size': [32],
         'lr': [0.0001],
-        'module__dropout': [0.4],
+        'module__dropout': [0.1],
         'module__activation_fct': ['prelu'],
-    },
-    {
-        'max_epochs': [1000], 'batch_size': [128],
-        'lr': [0.0001],
-        'module__dropout': [0.1, 0.2, 0.4],
-        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz', 'regular'],
     },
 ]
 
 other_params = {
-    'net_type': 'xyz',
     'temporal_duration': 100,
 }
 
@@ -62,7 +58,7 @@ y_test = y_test_14
 # -------------
 
 net = NeuralNetClassifier(
-    module=my_nets.XYZNet,
+    module=my_nets.Net,
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
