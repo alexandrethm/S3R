@@ -33,7 +33,14 @@ class MyCallback(Callback):
         :return:
         """
         params = net.get_params()
-        params_to_log = dict((key, params[key]) for key in self.params_to_log)
+        params_to_log = {}
+        for key in self.params_to_log:
+            try:
+                params_to_log[key] = params[key]
+            except KeyError:
+                # in case params[key] is not found (for some grid searches it can be the case)
+                params_to_log[key] = None
+
         self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
         self.experiment.log_multiple_params(params_to_log)
         self.experiment.set_model_graph(net.__str__())
@@ -71,9 +78,10 @@ def save_and_print_results(cv_results, grid_search_params):
 
     # select filename and important columns to save
     file_name = 'grid_{:%d%m_%H%M}'.format(datetime.now())
-    columns = ['rank_test_score', 'mean_test_score', 'mean_train_score', 'std_test_score', 'std_train_score']
+    columns = ['rank_test_score', 'mean_test_score', 'std_train_score']
     for key in get_param_keys(grid_search_params):
         columns.append('param_' + key)
+    columns.append('mean_fit_time')
 
     # save important results
     results.to_csv(path_or_buf='../run-data/grid_searches/{}.csv'.format(file_name),

@@ -1,0 +1,6 @@
+,rank_test_score,mean_test_score,mean_train_score,std_test_score,std_train_score,param_max_epochs,param_batch_size,param_lr,param_module__dropout,param_module__activation_fct,param_module__net_type,param_module__net_shape
+1,1,"0,8877551020408163","0,9696439597830505","0,012081968380071353","0,005082319520210358",300,32,0.0001,0.1,prelu,linear_combination,"(22, 3)"
+2,2,"0,8755102040816326","0,9635197524774325","0,01227831386595607","0,00473561892836423",300,32,0.0001,0.1,prelu,linear_combination,"(66, 1)"
+0,3,"0,8428571428571429","0,9278048111769469","0,011780420238072794","0,008897484664890981",300,32,0.0001,0.1,prelu,linear_combination,"(11, 2)"
+3,4,"0,0","0,0","0,0","0,0",300,32,0.0001,0.1,prelu,xyz,
+4,4,"0,0","0,0","0,0","0,0",300,32,0.0001,0.1,prelu,regular,

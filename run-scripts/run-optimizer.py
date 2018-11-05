@@ -1,6 +1,6 @@
 import numpy as np
-import torch
 import comet_ml
+import torch
 from sklearn.model_selection import *
 from skorch import NeuralNetClassifier
 
@@ -8,19 +8,60 @@ from code_S3R import my_utils, my_nets
 
 grid_search_params = [
     {
-        'max_epochs': [300], 'batch_size': [32],
+        'max_epochs': [500], 'batch_size': [32],
         'lr': [0.0001],
         'module__dropout': [0.1],
         'module__activation_fct': ['prelu'],
-        'module__net_type': ['linear_combination'],
-        'module__net_shape': [(11, 2), (22, 3), (66, 1)],  # (nb_seq_per_pipeline, nb_pipeline)
+        'module__net_type': ['xyz'],
     },
     {
-        'max_epochs': [300], 'batch_size': [32],
+        'max_epochs': [500], 'batch_size': [32],
         'lr': [0.0001],
-        'module__dropout': [0.1],
+        'module__dropout': [0.2],
         'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz', 'regular'],
+        'module__net_type': ['xyz'],
+    },
+    {
+        'max_epochs': [800], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.3],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz'],
+    },
+    {
+        'max_epochs': [800], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.4],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz'],
+    },
+    {
+        'max_epochs': [1000], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.5],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz'],
+    },
+    {
+        'max_epochs': [1200], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.6],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz'],
+    },
+    {
+        'max_epochs': [1400], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.7],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz'],
+    },
+    {
+        'max_epochs': [1600], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.8],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['xyz'],
     },
 ]
 
@@ -67,8 +108,8 @@ net = NeuralNetClassifier(
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
-gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2,
-                  error_score=0)
+gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2)
+                  #error_score=0) failsafe
 
 gs.fit(x_train, y_train)
 
