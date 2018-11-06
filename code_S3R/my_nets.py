@@ -1,4 +1,3 @@
-import itertools
 import torch
 from torch import nn
 
@@ -39,12 +38,7 @@ class Net(nn.Module):
 
         :param activation_fct: Activation function used (relu, prelu or swish).
         :param dropout: Dropout parameter
-        :param net_type: Type of the network.
-            'xyz' for a XYZ network, with 3 pipelines (one for x_i sequences, one for y_i sequences,
-            one for z_i sequences),
-            'regular' for a network with 1 sequence per pipeline,
-            'linear_combination' for a combination of all sequences to transform the sequences,
-            'graph_conv' for a graph convolution on the sequences
+        :param net_type: an instance of NetType
         :param net_shape: (nb_seq_per_pipeline, nb_pipelines) Only used for `linear_combination` networks, otherwise
         it's already determined by the network type.
         :param nb_classes: Number of output classes (gestures).

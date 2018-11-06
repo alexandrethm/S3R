@@ -8,60 +8,13 @@ from code_S3R import my_utils, my_nets
 
 grid_search_params = [
     {
-        'max_epochs': [500], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.1],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
-        'max_epochs': [500], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.2],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
-        'max_epochs': [800], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.3],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
         'max_epochs': [800], 'batch_size': [32],
         'lr': [0.0001],
         'module__dropout': [0.4],
         'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
-        'max_epochs': [1000], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.5],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
-        'max_epochs': [1200], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.6],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
-        'max_epochs': [1400], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.7],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
-    },
-    {
-        'max_epochs': [1600], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__dropout': [0.8],
-        'module__activation_fct': ['prelu'],
-        'module__net_type': ['xyz'],
+        'module__net_type': ['LSC'],
+        'module__net_shape': [(66, 1), (33, 2), (22, 3), (11, 6), (1, 66),
+                              (11, 3), ],
     },
 ]
 

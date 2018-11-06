@@ -1,5 +1,6 @@
 import itertools
 from datetime import datetime
+from enum import Enum
 
 import pandas
 
@@ -12,9 +13,7 @@ from skorch.callbacks import Callback
 from torch import nn
 
 
-# -------------
-# Logging
-# -------------
+# Logging -------------
 
 class MyCallback(Callback):
     """
@@ -77,27 +76,24 @@ def save_and_print_results(cv_results, grid_search_params):
     results = pandas.DataFrame(cv_results).sort_values('rank_test_score')
 
     # select filename and important columns to save
-    file_name = 'grid_{:%d%m_%H%M}'.format(datetime.now())
-    columns = ['rank_test_score', 'mean_test_score', 'std_train_score']
+    file_name = 'grid_{:%m%d_%H%M}'.format(datetime.now())
+    columns = ['rank_test_score', 'mean_test_score', 'std_test_score']
     for key in get_param_keys(grid_search_params):
         columns.append('param_' + key)
     columns.append('mean_fit_time')
 
     # save important results
     results.to_csv(path_or_buf='../run-data/grid_searches/{}.csv'.format(file_name),
-                   columns=columns, decimal=',')
+                   columns=columns)
     # save all results, without excluding some columns
-    results.to_csv(path_or_buf='../run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name),
-                   decimal=',')
+    results.to_csv(path_or_buf='../run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name))
 
     print('------')
     print('Results saved as {}.csv'.format(file_name))
     print('All results just in case :\n', cv_results)
 
 
-# -------------
-# Training
-# -------------
+# Training -------------
 
 
 class Swish(nn.Module):
@@ -135,6 +131,31 @@ class Swish(nn.Module):
 
     def extra_repr(self):
         return 'num_parameters={}'.format(self.num_parameters)
+
+
+class NetType(Enum):
+    xyz = 'xyz'
+    '''
+    'xyz' for a XYZ network, with 3 pipelines (one for x_i sequences, one for y_i sequences, one for z_i sequences)
+    '''
+
+    regular = 'regular'
+    '''
+    'regular' for a network with 1 sequence per pipeline
+    '''
+
+    LSC = 'LSC'
+    '''
+    'LSC' (linear spatial combination) for a linear combination to be applied on the sequences before the conv/pool
+    pipelines, in order to mix them.
+    
+    The same linear transformation is applied on all the sequences at each time step.
+    
+        input_batch : (batch_size, temporal_duration, initial_nb_sequences=66) ->
+            preprocessed_batch : (batch_size, temporal_duration, nb_sequences=m*n)
+            
+    With m*n (nb_seq_per_pipeline*nb_pipelines) not necessarily the initial nb of sequences.
+    '''
 
 
 def xavier_init(layer, activation_fct):
@@ -180,7 +201,7 @@ def perform_xavier_init(module_lists, modules, activation_fct):
 
 
 def get_preprocess_module(net_type, net_shape):
-    if net_type is 'linear_combination':
+    if net_type is NetType.LSC:
         m, n = net_shape
         return nn.Linear(66, m * n)
     else:
@@ -189,18 +210,16 @@ def get_preprocess_module(net_type, net_shape):
 
 def get_network_shape(net_type, net_shape):
     """
+    :param net_type: str
     :param net_shape: (nb_seq_per_pipeline, nb_pipelines) Only used for `linear_combination` networks, otherwise
     it's already determined by the network type.
-    :param net_type: str
     :return: m (number of of channels per pipeline), n (number of pipelines).
-    With each pipeline fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where nb_sequences is
-    the total number of sequences provided as input.
     """
-    if net_type is 'xyz':
+    if net_type is NetType.xyz.value:
         return 22, 3
-    elif net_type is 'regular':
+    elif net_type is NetType.regular.value:
         return 1, 66
-    elif net_type is 'linear_combination':
+    elif net_type is NetType.LSC.value:
         return net_shape
 
 
@@ -210,7 +229,13 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
 
     :param input_batch: A tensor of gestures. Its shape is (batch_size, temporal_duration, nb_sequences)
     :param net_type: str
+    :param net_shape: Network shape (m, n) if required (for networks with pre-processing for instance)
     :return: A list containing the inputs for each pipeline. Its shape is [n x (batch_size, m, temporal_duration)]
+    With each of the n pipelines fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where nb_sequences
+    is the total number of sequences provided as input.
+
+    Note that we are talking about (possibly) preprocessed input and sequences, so nb_sequences is not necessarily
+    the initial nb of sequences (66 for the SHREC data).
     """
     _, _, nb_sequences = input_batch.size()
     m, n = get_network_shape(net_type, net_shape)
@@ -219,7 +244,7 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
 
     pipeline_inputs = []
 
-    if net_type is 'xyz':
+    if net_type is NetType.xyz.value:
         for i in range(n):
             # Get all x_i (or y_i or z_i) time sequences in a list,
             # each one with the following shape : (batch_size, 1, temporal_duration)
@@ -232,7 +257,7 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
             pipeline_inputs.append(pipeline_input)
         return pipeline_inputs
 
-    elif net_type is 'regular':
+    elif net_type is NetType.regular.value:
         # Get all time sequences in a list,
         # each one with the following shape : (batch_size, m=1, temporal_duration)
         # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
@@ -240,7 +265,7 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
 
         return pipeline_inputs
 
-    elif net_type is 'linear_combination':
+    elif net_type is NetType.LSC.value:
         # Split the input batch into a list of n pipeline_input
         for i in range(n):
             # Add m time sequences to the input,
@@ -255,9 +280,7 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
         return pipeline_inputs
 
 
-# -------------
-# Loading and pre-processing
-# -------------
+# Loading and pre-processing -------------
 
 def load_data(filepath='/Users/alexandre/development/S3R/data/data.numpy.npy'):
     """
