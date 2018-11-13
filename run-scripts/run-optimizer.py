@@ -2,11 +2,20 @@ import numpy as np
 import comet_ml
 import torch
 from sklearn.model_selection import *
-from skorch import NeuralNetClassifier
+from skorch import NeuralNetClassifier, callbacks
 
-from code_S3R import my_utils, my_nets
+from code_S3R import my_nets
+import code_S3R.my_utils.other_utils as utils
 
 grid_search_params = [
+    # {
+    #     'max_epochs': [800], 'batch_size': [32],
+    #     'lr': [0.0001],
+    #     'module__dropout': [0.4],
+    #     'module__activation_fct': ['prelu'],
+    #     'module__net_type': ['graph_conv'],
+    #     'module__net_shape': [(1, 22), (2, 22), (3, 22), (5, 22)],
+    # }
     {
         'max_epochs': [800], 'batch_size': [32],
         'lr': [0.0001],
@@ -14,7 +23,7 @@ grid_search_params = [
         'module__activation_fct': ['prelu'],
         'module__net_type': ['LSC'],
         'module__net_shape': [(66, 1), (33, 2), (22, 3), (11, 6), (1, 66),
-                              (11, 3), ],
+                              (11, 3)],
     },
 ]
 
@@ -27,14 +36,15 @@ other_params = {
 # -------------
 
 # Load the dataset
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = my_utils.load_data()
+x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.load_data()
 # Shuffle sequences and resize sequences
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = my_utils.preprocess_data(x_train, x_test,
-                                                                                         y_train_14,
-                                                                                         y_train_28,
-                                                                                         y_test_14, y_test_28,
-                                                                                         temporal_duration=other_params[
-                                                                                             'temporal_duration'])
+x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.preprocess_data(x_train, x_test,
+                                                                                      y_train_14,
+                                                                                      y_train_28,
+                                                                                      y_test_14, y_test_28,
+                                                                                      temporal_duration=
+                                                                                      other_params[
+                                                                                          'temporal_duration'])
 
 # Feeding it PyTorch tensors doesn't seem to work, but numpy arrays with the right format is okay
 x_train = x_train.astype(np.float32)
@@ -56,13 +66,13 @@ net = NeuralNetClassifier(
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
-        ('my_cb', my_utils.MyCallback(params_to_log=my_utils.get_param_keys(grid_search_params))),
+        ('my_cb', utils.MyCallback(params_to_log=utils.get_param_keys(grid_search_params))),
     ],
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
 gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2)
-                  #error_score=0) failsafe
+                  #error_score=0)
 
 gs.fit(x_train, y_train)
 
@@ -70,4 +80,4 @@ gs.fit(x_train, y_train)
 # Save and log results
 # -------------
 
-my_utils.save_and_print_results(cv_results=gs.cv_results_, grid_search_params=grid_search_params)
+utils.save_and_print_results(cv_results=gs.cv_results_, grid_search_params=grid_search_params)
