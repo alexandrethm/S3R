@@ -10,6 +10,7 @@ torch = "==0.4.1"
 torchvision = "*"
 comet-ml = "*"
 pandas = "*"
+skorch = "*"
 
 [dev-packages]
 

@@ -79,10 +79,10 @@ def save_and_print_results(cv_results, grid_search_params):
     columns.append('mean_fit_time')
 
     # save important results
-    results.to_csv(path_or_buf='../run-data/grid_searches/{}.csv'.format(file_name),
+    results.to_csv(path_or_buf='./run-data/grid_searches/{}.csv'.format(file_name),
                    columns=columns)
     # save all results, without excluding some columns
-    results.to_csv(path_or_buf='../run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name))
+    results.to_csv(path_or_buf='./run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name))
 
     print('------')
     print('Results saved as {}.csv'.format(file_name))
@@ -91,7 +91,7 @@ def save_and_print_results(cv_results, grid_search_params):
 
 # Loading and pre-processing -------------
 
-def load_data(filepath='/Users/alexandre/development/S3R/data/data.numpy.npy'):
+def load_data(filepath='./data/data.numpy.npy'):
     """
     Returns hand gesture sequences (X) and their associated labels (Y).
     Each sequence has two different labels.
