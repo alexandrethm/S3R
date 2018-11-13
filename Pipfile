@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 sklearn = "*"
 numpy = "*"
-torch = "*"
+torch = "==0.4.1"
 torchvision = "*"
 comet-ml = "*"
 pandas = "*"
