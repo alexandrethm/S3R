@@ -17,13 +17,12 @@ grid_search_params = [
     #     'module__net_shape': [(1, 22), (2, 22), (3, 22), (5, 22)],
     # }
     {
-        'max_epochs': [800], 'batch_size': [32],
+        'max_epochs': [1000], 'batch_size': [32],
         'lr': [0.0001],
         'module__dropout': [0.4],
         'module__activation_fct': ['prelu'],
         'module__net_type': ['LSC'],
-        'module__net_shape': [(66, 1), (33, 2), (22, 3), (11, 6), (1, 66),
-                              (11, 3)],
+        'module__net_shape': [(33, 2)],
     },
 ]
 
@@ -67,6 +66,7 @@ net = NeuralNetClassifier(
     optimizer=torch.optim.Adam,
     callbacks=[
         ('my_cb', utils.MyCallback(params_to_log=utils.get_param_keys(grid_search_params))),
+        ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
