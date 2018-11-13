@@ -1,7 +1,8 @@
 import torch
 from torch import nn
 
-from code_S3R import my_utils as my_utils
+from code_S3R.my_utils import training_utils
+from code_S3R.my_utils.training_utils import NetType
 
 
 class Net(nn.Module):
@@ -39,8 +40,10 @@ class Net(nn.Module):
         :param activation_fct: Activation function used (relu, prelu or swish).
         :param dropout: Dropout parameter
         :param net_type: an instance of NetType
-        :param net_shape: (nb_seq_per_pipeline, nb_pipelines) Only used for `linear_combination` networks, otherwise
-        it's already determined by the network type.
+        :param net_shape:
+        For `linear_combination` networks : (nb_seq_per_pipeline, nb_pipelines)
+        For `graph_conv` networks : (nb_features_per_node, 22)
+        Otherwise it's already determined by the network type.
         :param nb_classes: Number of output classes (gestures).
         """
         super(Net, self).__init__()
@@ -51,17 +54,17 @@ class Net(nn.Module):
 
         # m : number of sequence channels per pipeline
         # n : number of pipelines
-        self.m, self.n = my_utils.get_network_shape(self.net_type, self.net_shape)
+        self.m, self.n = training_utils.get_network_shape(self.net_type, self.net_shape)
 
         activations = {
             'relu': nn.ReLU,
             'prelu': nn.PReLU,
-            'swish': my_utils.Swish,
+            'swish': training_utils.Swish,
         }
         pool = nn.AvgPool1d(kernel_size=2)
 
         # Eventually add a linear/graph_conv layer to mix the temporal sequences
-        self.preprocess_module = my_utils.get_preprocess_module(net_type, net_shape)
+        self.preprocess_module = training_utils.get_preprocess_module(net_type, net_shape)
 
         # High resolution branch
         # The first module is shared by all channels
@@ -138,7 +141,7 @@ class Net(nn.Module):
         )
 
         # Xavier initialization
-        my_utils.perform_xavier_init(
+        training_utils.perform_xavier_init(
             [
                 self.conv_high_res_shared,
                 self.conv_high_res_individuals,
@@ -160,12 +163,16 @@ class Net(nn.Module):
         :return: A tensor of results. Its shape is (batch_size x nb_classes)
         """
         # Pre-process input if required
-        if self.preprocess_module is not None:
-            input_batch = self.preprocess_module(input_batch)
+        if self.net_type is NetType.graph_conv.value:
+            pipeline_inputs = self.preprocess_module(input_batch, adj=training_utils.adj)
+        else:
+            if self.preprocess_module is not None:
+                input_batch = self.preprocess_module(input_batch)
 
-        # Apply pipelines
-        pipeline_inputs = my_utils.get_pipeline_inputs(input_batch=input_batch,
-                                                       net_type=self.net_type, net_shape=self.net_shape)
+            # Apply pipelines
+            pipeline_inputs = training_utils.get_pipeline_inputs(input_batch=input_batch,
+                                                                 net_type=self.net_type, net_shape=self.net_shape)
+
         pipeline_outputs = []
 
         for i in range(self.n):
@@ -190,7 +197,7 @@ class Net(nn.Module):
 
         # Concatenates all pipelines output to a single dimension output.
         output = torch.cat(pipeline_outputs, 1)
-        output = output.view(-1, my_utils.num_flat_features(output))
+        output = output.view(-1, training_utils.num_flat_features(output))
 
         output = self.fc_module(output)
 
