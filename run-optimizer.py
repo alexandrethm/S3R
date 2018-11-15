@@ -21,9 +21,16 @@ grid_search_params = [
         'lr': [0.0001],
         'module__dropout': [0.4],
         'module__activation_fct': ['prelu'],
-        'module__net_type': ['LSC'],
-        'module__net_shape': [(33, 2)],
+        'module__net_type': ['regular', 'xyz'],
     },
+    {
+        'max_epochs': [1000], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__dropout': [0.4],
+        'module__activation_fct': ['prelu'],
+        'module__net_type': ['graph_conv'],
+        'module__net_shape': [(1, 22), (3, 22), (5, 22)],
+    }
 ]
 
 other_params = {
@@ -71,8 +78,8 @@ net = NeuralNetClassifier(
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
-gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2)
-                  #error_score=0)
+gs = GridSearchCV(estimator=net, param_grid=grid_search_params, refit=False, scoring='accuracy', verbose=2,
+                  error_score=0)
 
 gs.fit(x_train, y_train)
 
