@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from code_S3R.my_utils import training_utils
+from code_S3R.my_utils import training_utils, tcn
 from code_S3R.my_utils.training_utils import NetType
 
 
@@ -33,7 +33,7 @@ class Net(nn.Module):
 
     """
 
-    def __init__(self, activation_fct='relu', dropout=0, net_type='xyz', net_shape=(0, 0), nb_classes=14):
+    def __init__(self, activation_fct='prelu', dropout=0.4, net_type='xyz', net_shape=(0, 0), nb_classes=14):
         r"""
         Instantiates the parameters and the modules.
 
@@ -51,6 +51,8 @@ class Net(nn.Module):
         self.dropout = dropout
         self.net_type = net_type
         self.net_shape = net_shape
+
+        # TODO : batchnorm/weightnorm to replace dropout and/or train faster ?
 
         # m : number of sequence channels per pipeline
         # n : number of pipelines
@@ -131,6 +133,7 @@ class Net(nn.Module):
         # The last layer, fully connected
         nb_features_1 = self.n * (
                 4 + 4 + self.m) * 12  # Size : n pipelines * (4 + 4 + m) outputs/channel * 12 time step/output
+        # TODO : check other values ?
         nb_features_2 = int(nb_features_1 / 3.91)
         self.fc_module = nn.Sequential(
             nn.Linear(in_features=nb_features_1, out_features=nb_features_2),
@@ -199,6 +202,51 @@ class Net(nn.Module):
         output = torch.cat(pipeline_outputs, 1)
         output = output.view(-1, training_utils.num_flat_features(output))
 
+        output = self.fc_module(output)
+
+        return output
+
+
+class TCN(nn.Module):
+
+    def __init__(self, activation_fct='prelu', dropout=0.4, net_type='TCN', net_shape=(0, 0), tcn_channels=None,
+                 nb_classes=14):
+        super().__init__()
+        self.activation_fct = activation_fct
+        self.dropout = dropout
+        self.net_type = net_type
+        self.net_shape = net_shape
+        self.tcn_channels = tcn_channels
+
+        activations = {
+            'relu': nn.ReLU,
+            'prelu': nn.PReLU,
+            'swish': training_utils.Swish,
+        }
+        self.activation_fct = activations[activation_fct]
+
+        if tcn_channels is None:
+            tcn_channels = []
+
+        self.tcn = tcn.TemporalConvNet(66, num_channels=tcn_channels, dropout=dropout,
+                                       activation_fct=self.activation_fct)
+
+        nb_features_1 = tcn_channels[-1] * 100
+        nb_features_2 = int(nb_features_1 / 4)
+        self.fc_module = nn.Sequential(
+            nn.Linear(in_features=nb_features_1, out_features=nb_features_2),
+            activations[activation_fct](),
+            nn.Dropout(self.dropout),
+            nn.Linear(in_features=nb_features_2, out_features=nb_classes),
+        )
+
+    def forward(self, input_batch):
+        # reshape input_batch from (N, L, C) to (N, C, L)
+        input = input_batch.transpose(1, 2)
+
+        output = self.tcn(input)
+
+        output = output.view(-1, training_utils.num_flat_features(output))
         output = self.fc_module(output)
 
         return output
