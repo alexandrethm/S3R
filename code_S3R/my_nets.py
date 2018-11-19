@@ -209,7 +209,7 @@ class Net(nn.Module):
 
 class TCN(nn.Module):
 
-    def __init__(self, activation_fct='prelu', dropout=0.4, net_type='TCN', net_shape=(0, 0), tcn_channels=None,
+    def __init__(self, activation_fct='prelu', dropout=0.4, net_type='TCN', net_shape=(0, 0), tcn_channels=None, tcn_k=2,
                  nb_classes=14):
         super().__init__()
         self.activation_fct = activation_fct
@@ -217,6 +217,7 @@ class TCN(nn.Module):
         self.net_type = net_type
         self.net_shape = net_shape
         self.tcn_channels = tcn_channels
+        self.tcn_k = tcn_k
 
         activations = {
             'relu': nn.ReLU,
@@ -228,7 +229,7 @@ class TCN(nn.Module):
         if tcn_channels is None:
             tcn_channels = []
 
-        self.tcn = tcn.TemporalConvNet(66, num_channels=tcn_channels, dropout=dropout,
+        self.tcn = tcn.TemporalConvNet(66, num_channels=tcn_channels, kernel_size=tcn_k, dropout=dropout,
                                        activation_fct=self.activation_fct)
 
         nb_features_1 = tcn_channels[-1] * 100

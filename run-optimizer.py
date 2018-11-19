@@ -24,17 +24,18 @@ import code_S3R.my_utils.other_utils as utils
 hyper_params = {
     'max_epochs': [1000], 'batch_size': [32],
     'lr': [0.0001],
-    'module__dropout': stats.uniform(0, 1),
+    'module__dropout': [0.4],
     'module__activation_fct': ['prelu'],
     'module__net_type': ['TCN'],
     'module__tcn_channels': [
-        [22, 11],
-        [22, 6],
-        [33, 22],
-        [33, 11, 11],
-        [22, 22, 11],
+        [6],
+        [11],
+        [22],
+        [33],
+        [44],
+        [66],
     ],
-    # 'module__tcn_k': stats.randint(2, 5)
+    'module__tcn_k': stats.randint(2, 6), # a <= randint(a, b) < b
 }
 my_net = my_nets.TCN if hyper_params['module__net_type'] == ['TCN'] else my_nets.Net
 
