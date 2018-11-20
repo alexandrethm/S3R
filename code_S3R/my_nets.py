@@ -1,9 +1,11 @@
+import torch
 from torch import nn
 
 from code_S3R.modules.fully_connected import FullyConnected
 from code_S3R.modules.regular_cn import RegularConvNet
 from code_S3R.modules.tcn import TemporalConvNet
 from code_S3R.my_utils import training_utils
+from code_S3R.modules.gcn import GCN
 
 
 # class Net(nn.Module):
@@ -268,11 +270,11 @@ class Net2(nn.Module):
 
         # Preprocess module
         if preprocess is 'LSC':
-            pass
+            self.preprocess_module = nn.Linear(66, channel_list[0])
         elif preprocess is 'graph_conv':
-            pass
+            self.preprocess_module = GCN(channel_list[0])
         elif preprocess is None:
-            pass
+            self.preprocess_module = None
         else:
             raise AttributeError('Preprocess module {} not recognized'.format(preprocess))
 
@@ -302,5 +304,20 @@ class Net2(nn.Module):
         self.fc_module = FullyConnected(nb_features_1, nb_features_2, nb_classes,
                                         activation_fct=self.activation_fct, activation_fct_name=activation_fct)
 
-    def forward(self, *input):
-        pass
+    def forward(self, x):
+
+        # Preprocess module
+        if self.preprocess_module is not None:
+            x = self.preprocess_module(x)
+
+        # Convolution module
+        x = x.transpose(1, 2)
+        x_small = self.conv_small(x)
+        x_large = self.conv_large(x)
+        x = torch.cat([x_small, x_large], dim=1)
+
+        # Classification module
+        x = x.view(-1, training_utils.num_flat_features(x))
+        x = self.fc_module(x)
+
+        return x

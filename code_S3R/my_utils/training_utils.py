@@ -48,42 +48,42 @@ class Swish(nn.Module):
 
 # Different net types
 
-class NetType(Enum):
-    xyz = 'xyz'
-    '''
-    'xyz' for a XYZ network, with 3 pipelines (one for x_i sequences, one for y_i sequences, one for z_i sequences)
-    '''
-
-    regular = 'regular'
-    '''
-    'regular' for a network with 1 sequence per pipeline
-    '''
-
-    LSC = 'LSC'
-    '''
-    'LSC' (linear spatial combination) for a linear combination to be applied on the sequences before the conv/pool
-    pipelines, in order to mix them.
-
-    The same linear transformation is applied on all the sequences at each time step.
-
-        input_batch : (batch_size, temporal_duration, initial_nb_sequences=66) ->
-        preprocessed_batch : (batch_size, temporal_duration, nb_sequences=m*n)
-
-    With m*n (nb_seq_per_pipeline*nb_pipelines, nb of features out of the linear combination)
-     not necessarily the initial nb of sequences.
-    '''
-
-    graph_conv = 'graph_conv'
-    '''
-    'graph_conv' for a graph convolution on the joints before the conv/pool pipelines.
-    
-        input_batch : (batch_size, temporal_duration, initial_nb_sequences=66),
-         seen as a graph (each joint being a node with 3 features : x_i, y_i and z_i) ->
-        preprocessed_batch : (batch_size, temporal_duration, nb_sequences=22*k)
-
-    With k the number of output features per node. After that, the features will be fed to 22 pipelines (one pipeline
-    per node/joint), with l features per pipeline.
-    '''
+# class NetType(Enum):
+#     xyz = 'xyz'
+#     '''
+#     'xyz' for a XYZ network, with 3 pipelines (one for x_i sequences, one for y_i sequences, one for z_i sequences)
+#     '''
+#
+#     regular = 'regular'
+#     '''
+#     'regular' for a network with 1 sequence per pipeline
+#     '''
+#
+#     LSC = 'LSC'
+#     '''
+#     'LSC' (linear spatial combination) for a linear combination to be applied on the sequences before the conv/pool
+#     pipelines, in order to mix them.
+#
+#     The same linear transformation is applied on all the sequences at each time step.
+#
+#         input_batch : (batch_size, temporal_duration, initial_nb_sequences=66) ->
+#         preprocessed_batch : (batch_size, temporal_duration, nb_sequences=m*n)
+#
+#     With m*n (nb_seq_per_pipeline*nb_pipelines, nb of features out of the linear combination)
+#      not necessarily the initial nb of sequences.
+#     '''
+#
+#     graph_conv = 'graph_conv'
+#     '''
+#     'graph_conv' for a graph convolution on the joints before the conv/pool pipelines.
+#
+#         input_batch : (batch_size, temporal_duration, initial_nb_sequences=66),
+#          seen as a graph (each joint being a node with 3 features : x_i, y_i and z_i) ->
+#         preprocessed_batch : (batch_size, temporal_duration, nb_sequences=22*k)
+#
+#     With k the number of output features per node. After that, the features will be fed to 22 pipelines (one pipeline
+#     per node/joint), with l features per pipeline.
+#     '''
 
 
 def xavier_init(layer, activation_fct):
@@ -129,91 +129,79 @@ def perform_xavier_init(module_lists, modules, activation_fct):
             xavier_init(layer, activation_fct)
 
 
-def get_preprocess_module(net_type, net_shape):
-    if net_type is NetType.LSC.value:
-        m, n = net_shape
-        return nn.Linear(66, m * n)
-
-    elif net_type is NetType.graph_conv.value:
-        f, _ = net_shape
-        return GCN(f)
-    else:
-        return None
-
-
-def get_network_shape(net_type, net_shape):
-    """
-    :param net_type: str
-    :param net_shape:
-        For `linear_combination` networks : (nb_seq_per_pipeline, nb_pipelines)
-        For `graph_conv` networks : (nb_features_per_node)
-        Otherwise it's already determined by the network type.
-    :return: m (number of of channels per pipeline), n (number of pipelines).
-    """
-    if net_type is NetType.xyz.value:
-        return 22, 3
-    elif net_type is NetType.regular.value:
-        return 1, 66
-    elif net_type is NetType.LSC.value:
-        return net_shape
-    elif net_type is NetType.graph_conv.value:
-        return net_shape
-
-
-def get_pipeline_inputs(input_batch, net_type, net_shape):
-    """
-    Get inputs in the right shape, according to the network type specified.
-
-    - input_batch : (N=batch_size, L=temporal_duration, C=nb_sequences)
-    - output : [n x(N, C=m, L)], where (m, n) = net_shape
-
-    :param input_batch: A tensor of gestures. Its shape is (batch_size, temporal_duration, nb_sequences)
-    :param net_type: str
-    :param net_shape: Network shape (m, n) if required (for networks with pre-processing for instance)
-    :return: A list containing the inputs for each pipeline. Its shape is [n x (batch_size, m, temporal_duration)]
-    """
-    _, _, nb_sequences = input_batch.size()
-    m, n = get_network_shape(net_type, net_shape)
-    # make sure the dimensions are right
-    # With each of the n pipelines fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where
-    # nb_sequences is the total number of sequences provided as input.
-    # Note that we are talking about (possibly) preprocessed input and sequences, so nb_sequences is not necessarily
-    # the initial nb of sequences (66 for the SHREC data).
-    assert m * n == nb_sequences, 'Number of sequences in batch input does not match network shape'
-
-    pipeline_inputs = []
-
-    if net_type is NetType.xyz.value:
-        for i in range(n):
-            # Get all x_i (or y_i or z_i) time sequences in a list,
-            # each one with the following shape : (batch_size, 1, temporal_duration)
-            pipeline_input = [input_batch[:, :, 3 * j + i].unsqueeze(1) for j in range(m)]
-
-            # Concatenate the list to get an appropriate shape : (batch_size, m=22, temporal_duration),
-            # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
-            pipeline_input = torch.cat(pipeline_input, 1)
-
-            pipeline_inputs.append(pipeline_input)
-        return pipeline_inputs
-
-    elif net_type is NetType.regular.value:
-        # Get all time sequences in a list,
-        # each one with the following shape : (batch_size, m=1, temporal_duration)
-        # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
-        pipeline_inputs = [input_batch[:, :, j].unsqueeze(1) for j in range(n)]
-
-        return pipeline_inputs
-
-    elif net_type is NetType.LSC.value:
-        # Split the input batch into a list of n pipeline_input
-        for i in range(n):
-            # Add m time sequences to the input,
-            # each one with the following shape : (batch_size, 1, temporal_duration)
-            pipeline_input = [input_batch[:, :, i * m + j].unsqueeze(1) for j in range(m)]
-
-            # Concatenate the list to get an appropriate shape : (batch_size, m, temporal_duration),
-            # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
-            pipeline_input = torch.cat(pipeline_input, 1)
-
-            pipeline_inputs.append(pipeline_input)
-        return pipeline_inputs
+# def get_network_shape(net_type, net_shape):
+#     """
+#     :param net_type: str
+#     :param net_shape:
+#         For `linear_combination` networks : (nb_seq_per_pipeline, nb_pipelines)
+#         For `graph_conv` networks : (nb_features_per_node)
+#         Otherwise it's already determined by the network type.
+#     :return: m (number of of channels per pipeline), n (number of pipelines).
+#     """
+#     if net_type is NetType.xyz.value:
+#         return 22, 3
+#     elif net_type is NetType.regular.value:
+#         return 1, 66
+#     elif net_type is NetType.LSC.value:
+#         return net_shape
+#     elif net_type is NetType.graph_conv.value:
+#         return net_shape
+#
+#
+# def get_pipeline_inputs(input_batch, net_type, net_shape):
+#     """
+#     Get inputs in the right shape, according to the network type specified.
+#
+#     - input_batch : (N=batch_size, L=temporal_duration, C=nb_sequences)
+#     - output : [n x(N, C=m, L)], where (m, n) = net_shape
+#
+#     :param input_batch: A tensor of gestures. Its shape is (batch_size, temporal_duration, nb_sequences)
+#     :param net_type: str
+#     :param net_shape: Network shape (m, n) if required (for networks with pre-processing for instance)
+#     :return: A list containing the inputs for each pipeline. Its shape is [n x (batch_size, m, temporal_duration)]
+#     """
+#     _, _, nb_sequences = input_batch.size()
+#     m, n = get_network_shape(net_type, net_shape)
+#     # make sure the dimensions are right
+#     # With each of the n pipelines fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where
+#     # nb_sequences is the total number of sequences provided as input.
+#     # Note that we are talking about (possibly) preprocessed input and sequences, so nb_sequences is not necessarily
+#     # the initial nb of sequences (66 for the SHREC data).
+#     assert m * n == nb_sequences, 'Number of sequences in batch input does not match network shape'
+#
+#     pipeline_inputs = []
+#
+#     if net_type is NetType.xyz.value:
+#         for i in range(n):
+#             # Get all x_i (or y_i or z_i) time sequences in a list,
+#             # each one with the following shape : (batch_size, 1, temporal_duration)
+#             pipeline_input = [input_batch[:, :, 3 * j + i].unsqueeze(1) for j in range(m)]
+#
+#             # Concatenate the list to get an appropriate shape : (batch_size, m=22, temporal_duration),
+#             # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
+#             pipeline_input = torch.cat(pipeline_input, 1)
+#
+#             pipeline_inputs.append(pipeline_input)
+#         return pipeline_inputs
+#
+#     elif net_type is NetType.regular.value:
+#         # Get all time sequences in a list,
+#         # each one with the following shape : (batch_size, m=1, temporal_duration)
+#         # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
+#         pipeline_inputs = [input_batch[:, :, j].unsqueeze(1) for j in range(n)]
+#
+#         return pipeline_inputs
+#
+#     elif net_type is NetType.LSC.value:
+#         # Split the input batch into a list of n pipeline_input
+#         for i in range(n):
+#             # Add m time sequences to the input,
+#             # each one with the following shape : (batch_size, 1, temporal_duration)
+#             pipeline_input = [input_batch[:, :, i * m + j].unsqueeze(1) for j in range(m)]
+#
+#             # Concatenate the list to get an appropriate shape : (batch_size, m, temporal_duration),
+#             # so it fits Conv1D format : (batch_size, num_feature_maps, length_of_seq)
+#             pipeline_input = torch.cat(pipeline_input, 1)
+#
+#             pipeline_inputs.append(pipeline_input)
+#         return pipeline_inputs
