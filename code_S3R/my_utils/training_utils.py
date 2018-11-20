@@ -4,6 +4,7 @@ from enum import Enum
 import torch
 from torch import nn
 import numpy as np
+from code_S3R.modules.gcn import GCN
 
 
 # Custom modules
