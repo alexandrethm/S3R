@@ -88,11 +88,10 @@ class RegularConvBlock(nn.Module):
         self.activation_fct = activation_fct
 
         # Convolution branch
-        self.conv = weight_norm(nn.Conv1d(in_channels, out_channels,
-                                          kernel_size=kernel_size, padding=padding, groups=groups))
-
+        conv = weight_norm(nn.Conv1d(in_channels, out_channels,
+                                     kernel_size=kernel_size, padding=padding, groups=groups))
         self.net = nn.Sequential(
-            self.conv,
+            conv,
             activation_fct(),
             pool,
             nn.Dropout(dropout),
@@ -102,20 +101,27 @@ class RegularConvBlock(nn.Module):
         if kernel_size % 2 == 1:
             residual_pool = pool
         else:
-            k_pool_original = pool.kernel_size[0]  # kernel_size is a tuple
+            k_pool_original = pool.kernel_size[0]  # pool.kernel_size is a tuple
             residual_pool = nn.AvgPool1d(kernel_size=k_pool_original + 1,
                                          stride=k_pool_original)
         if in_channels != out_channels:
             self.downsample = nn.Sequential(
-                nn.Conv1d(in_channels, out_channels, 1),  # doesn't change sequence length
+                # this convolution doesn't change sequence length
+                # its role is only to change the number of channels of the residual branch
+                nn.Conv1d(in_channels, out_channels, 1),
+
+                # pooling makes sure that residual sequence length is the same as the convolved sequence
                 residual_pool,
             )
         else:
+            # in this case, there is no need to change the number of channels, only to change sequence length
             self.downsample = residual_pool
+
+        # Final activation function
         self.act = activation_fct()
 
     def init_weights(self):
-        perform_xavier_init(modules=[self.net, self.downsample],
+        perform_xavier_init(module_list=[self.net, self.downsample],
                             activation_fct=self.activation_fct.__name__)
 
     def forward(self, x):

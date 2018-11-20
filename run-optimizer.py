@@ -8,36 +8,38 @@ from skorch import NeuralNetClassifier, callbacks
 from code_S3R import my_nets
 import code_S3R.my_utils.other_utils as utils
 
-# grid_search_params = [
-#     {
-#         'max_epochs': [1000], 'batch_size': [32],
-#         'lr': [0.0001],
-#         'module__dropout': [0.4],
-#         'module__activation_fct': ['prelu'],
-#         'module__net_type': ['TCN'],
-#         'module__tcn_channels': [
-#             [33, 15, 5, 3],
-#             [33, 15, 5, 3, 1]
-#         ]
-#     }
-# ]
-hyper_params = {
-    'max_epochs': [1000], 'batch_size': [32],
-    'lr': [0.0001],
-    'module__dropout': [0.4],
-    'module__activation_fct': ['prelu'],
-    'module__net_type': ['TCN'],
-    'module__tcn_channels': [
-        [6],
-        [11],
-        [22],
-        [33],
-        [44],
-        [66],
-    ],
-    'module__tcn_k': stats.randint(2, 6), # a <= randint(a, b) < b
-}
-my_net = my_nets.TCN if hyper_params['module__net_type'] == ['TCN'] else my_nets.Net
+hyper_params = [
+    {
+        'max_epochs': [1000], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__preprocess': ['LSC', 'graph_conv'],
+        'module__conv_type': ['temporal'],
+        'module__channel_list': [
+            [6],
+            [22],
+            [33],
+            [66],
+            [33, 11],
+            [66, 22],
+        ],
+        'module__activation_fct': ['prelu'],
+        'module__dropout': [0.4],
+    },
+    {
+        'max_epochs': [1000], 'batch_size': [32],
+        'lr': [0.0001],
+        'module__preprocess': ['LSC', 'graph_conv'],
+        'module__conv_type': ['regular'],
+        'module__channel_list': [
+            [66, 33],
+            [66, 11],
+            [66, 66, 33],
+            [66, 33, 22, 22],
+        ],
+        'module__activation_fct': ['prelu'],
+        'module__dropout': [0.4],
+    },
+]
 
 # -------------
 # Data
@@ -70,7 +72,7 @@ y_test = y_test_14
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 net = NeuralNetClassifier(
-    module=my_net,
+    module=my_nets.Net,
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
@@ -81,8 +83,11 @@ net = NeuralNetClassifier(
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
-gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, refit=False, scoring='accuracy',
-                        verbose=2, cv=3, error_score=0)
+gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy',
+                  verbose=2, cv=5, error_score=0)
+
+# gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, refit=False, scoring='accuracy',
+#                        verbose=2, cv=5, error_score=0)
 
 gs.fit(x_train, y_train)
 

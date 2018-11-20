@@ -41,7 +41,7 @@ class FullyConnected(nn.Module):
         self.init_weights()
 
     def init_weights(self):
-        training_utils.perform_xavier_init(modules=[self.network],
+        training_utils.perform_xavier_init(module_list=[self.network],
                                            activation_fct=self.activation_fct_name)
 
     def forward(self, x):

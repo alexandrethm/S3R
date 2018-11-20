@@ -39,11 +39,11 @@
         },
         "comet-ml": {
             "hashes": [
-                "sha256:d3343ffaa2f7ae54995ae0645da4dc5dd93689e7fcd74384c30c8661f572a328",
-                "sha256:daac81c49a74b0873500fdef499fc1946881c9b222810d111d4efcfd4422668a"
+                "sha256:1e973c41142aef87bef6d686e5f6bfa969d012d770950306e7d9e7e64e6df8b0",
+                "sha256:ebc22aac8f1d04fb38c681def0eb0c7ad6b55bbe174d20e304cbd8661fbf7de5"
             ],
             "index": "pypi",
-            "version": "==1.0.37"
+            "version": "==1.0.38"
         },
         "configobj": {
             "hashes": [
