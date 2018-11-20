@@ -51,7 +51,6 @@ from code_S3R.my_utils import training_utils
 #         self.net_type = net_type
 #         self.net_shape = net_shape
 #
-#         # TODO : batchnorm/weightnorm to replace dropout and/or train faster ?
 #
 #         # m : number of sequence channels per pipeline
 #         # n : number of pipelines
@@ -255,7 +254,8 @@ from code_S3R.my_utils import training_utils
 
 class Net2(nn.Module):
 
-    def __init__(self, preprocess, conv_type, channel_list, groups, activation_fct='prelu', dropout=0.4, nb_classes=14):
+    def __init__(self, preprocess, conv_type, channel_list, sequence_length, groups=1, activation_fct='prelu',
+                 dropout=0.4, nb_classes=14):
         super(Net2, self).__init__()
 
         activations = {
@@ -297,10 +297,9 @@ class Net2(nn.Module):
             raise AttributeError('Convolution module {} not recognized'.format(conv_type))
 
         # Classification module
-        nb_features_1 = 0  # todo: get number of out features
+        nb_features_1 = self.conv_small.get_out_features(sequence_length) + self.conv_large.get_out_features(sequence_length)
         nb_features_2 = int(nb_features_1 * 0.2)
-        self.fc_module = FullyConnected(nb_features_1, nb_features_2, nb_classes,
-                                        activation_fct=self.activation_fct, activation_fct_name=activation_fct)
+        self.fc_module = FullyConnected(nb_features_1, nb_features_2, nb_classes, activation_fct)
 
     def forward(self, *input):
         pass

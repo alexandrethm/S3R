@@ -31,11 +31,10 @@ class FullyConnected(nn.Module):
             activation_fct(),
             nn.Dropout(self.dropout),
             self.fc_layer2,
-            # todo: add softmax ?
         )
 
     def init_weights(self):
-        training_utils.perform_xavier_init(module_lists=[], modules=[self.network],
+        training_utils.perform_xavier_init(modules=[self.network],
                                            activation_fct=self.activation_fct_name)
 
     def forward(self, x):
