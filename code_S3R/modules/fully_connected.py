@@ -12,27 +12,33 @@ class FullyConnected(nn.Module):
         - Output : *(nb_classes)* The classification tensor
 
     Args:
-        nb_features_1 (int): Number of input features
-        nb_features_2 (int): Number of features between the 2 FC layers
-        nb_classes (int): Number of classes as output
-        activation_fct: Activation function class, ready to be instantiated
-        activation_fct_name (string): The string corresponding to the activation_fct ('relu', 'prelu', 'swish', etc)
+        input_layer (int): Input size
+        hidden_layers (list): List of integers. Each i-th integer is the number of features after the i-th layer.
+        nb_classes (int): Output size (i.e. number of classes)
+        activation_fct_class: Activation function class, ready to be instantiated
+        dropout_p (float): Dropout parameter between 0 and 1. Default: None.
     """
 
-    def __init__(self, nb_features_1, nb_features_2, nb_classes, activation_fct, activation_fct_name):
+    def __init__(self, input_layer, hidden_layers, nb_classes, activation_fct_class, dropout_p=None):
         super(FullyConnected, self).__init__()
-        self.activation_fct_name = activation_fct_name
+        self.activation_fct_class = activation_fct_class
+        self.activation_fct_name = self.activation_fct_class.__name__
+        self.activation_fct_name = self.activation_fct_name.lower()
+        if self.activation_fct_name is 'leakyrelu':
+            self.activation_fct_name = 'leaky_relu'
+        self.dropout_p = dropout_p
 
-        self.fc_layer1 = nn.Linear(in_features=nb_features_1, out_features=nb_features_2),
-        self.fc_layer2 = nn.Linear(in_features=nb_features_2, out_features=nb_classes),
+        nb_neurons = [input_layer] + hidden_layers + [nb_classes]  # merges the three lists
 
-        self.network = nn.Sequential(
-            self.fc_layer1,
-            activation_fct(),
-            nn.Dropout(self.dropout),
-            self.fc_layer2,
-            # todo: add softmax ?
-        )
+        layers = []
+        for idx in range(len(nb_neurons) -1):
+            layers.append(nn.Linear(in_features=nb_neurons[idx], out_features=nb_neurons[idx+1]))
+            layers.append(self.activation_fct_class())
+            if self.dropout_p is not None:
+                layers.append(nn.Dropout(self.dropout_p))
+
+        self.network = nn.Sequential(*layers)
+        self.init_weights()
 
     def init_weights(self):
         training_utils.perform_xavier_init(module_lists=[], modules=[self.network],

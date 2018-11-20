@@ -257,7 +257,8 @@ from code_S3R.modules.gcn import GCN
 
 class Net2(nn.Module):
 
-    def __init__(self, preprocess, conv_type, channel_list, groups, activation_fct='prelu', dropout=0.4, nb_classes=14):
+    def __init__(self, preprocess, conv_type, channel_list, groups, activation_fct='prelu', dropout=0.4,
+                 fc_hidden_layers=[1936, 128], nb_classes=14):
         super(Net2, self).__init__()
 
         activations = {
@@ -300,9 +301,9 @@ class Net2(nn.Module):
 
         # Classification module
         nb_features_1 = 0  # todo: get number of out features
-        nb_features_2 = int(nb_features_1 * 0.2)
-        self.fc_module = FullyConnected(nb_features_1, nb_features_2, nb_classes,
-                                        activation_fct=self.activation_fct, activation_fct_name=activation_fct)
+        self.fc_module = FullyConnected(input_layer=nb_features_1, hidden_layers=fc_hidden_layers,
+                                        nb_classes=nb_classes, activation_fct_class=self.activation_fct,
+                                        dropout_p=dropout)
 
     def forward(self, x):
 
