@@ -88,10 +88,12 @@ class NetType(Enum):
 def xavier_init(layer, activation_fct):
     param = None
 
-    if activation_fct == 'prelu':
+    if activation_fct == 'ReLU':
+        activation_fct = 'relu'
+    elif activation_fct == 'PReLU':
         activation_fct = 'leaky_relu'
         param = torch.nn.PReLU().weight.item()
-    elif activation_fct == 'swish':
+    elif activation_fct == 'Swish':
         activation_fct = 'sigmoid'
 
     torch.nn.init.xavier_uniform_(layer.weight, gain=torch.nn.init.calculate_gain(activation_fct, param=param))
@@ -110,19 +112,17 @@ def num_flat_features(x):
     return num_features
 
 
-def perform_xavier_init(module_lists, modules, activation_fct):
+def perform_xavier_init(modules, activation_fct):
     """
     Perform xavier_init on Conv1d and Linear layers insides the specified modules.
 
-    :param module_lists: list of ModuleList objects
-    :param modules: list of Module objects
-    :param activation_fct:
-    """
-    for module in itertools.chain(module_lists):
-        for layer in module:
-            if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
-                xavier_init(layer, activation_fct)
+    Args:
+        modules (list): list of Module objects
+        activation_fct (str): The class of the activation function
 
+    Returns:
+
+    """
     for layer in itertools.chain(modules):
         if layer.__class__.__name__ == "Conv1d" or layer.__class__.__name__ == "Linear":
             xavier_init(layer, activation_fct)
