@@ -1,9 +1,11 @@
+import torch
 from torch import nn
 
 from code_S3R.modules.fully_connected import FullyConnected
 from code_S3R.modules.regular_cn import RegularConvNet
 from code_S3R.modules.tcn import TemporalConvNet
 from code_S3R.my_utils import training_utils
+from code_S3R.modules.gcn import GCN
 
 
 # class Net(nn.Module):
@@ -255,7 +257,7 @@ from code_S3R.my_utils import training_utils
 class Net2(nn.Module):
 
     def __init__(self, preprocess, conv_type, channel_list, sequence_length, groups=1, activation_fct='prelu',
-                 dropout=0.4, nb_classes=14):
+                 dropout=0.4, fc_hidden_layers=[1936, 128], nb_classes=14):
         super(Net2, self).__init__()
 
         activations = {
@@ -268,11 +270,11 @@ class Net2(nn.Module):
 
         # Preprocess module
         if preprocess is 'LSC':
-            pass
+            self.preprocess_module = nn.Linear(66, channel_list[0])
         elif preprocess is 'graph_conv':
-            pass
+            self.preprocess_module = GCN(channel_list[0])
         elif preprocess is None:
-            pass
+            self.preprocess_module = None
         else:
             raise AttributeError('Preprocess module {} not recognized'.format(preprocess))
 
@@ -297,9 +299,26 @@ class Net2(nn.Module):
             raise AttributeError('Convolution module {} not recognized'.format(conv_type))
 
         # Classification module
-        nb_features_1 = self.conv_small.get_out_features(sequence_length) + self.conv_large.get_out_features(sequence_length)
-        nb_features_2 = int(nb_features_1 * 0.2)
-        self.fc_module = FullyConnected(nb_features_1, nb_features_2, nb_classes, activation_fct)
+        nb_features_1 = self.conv_small.get_out_features(sequence_length) + self.conv_large.get_out_features(
+            sequence_length)
+        self.fc_module = FullyConnected(input_layer=nb_features_1, hidden_layers=fc_hidden_layers,
+                                        nb_classes=nb_classes, activation_fct_class=self.activation_fct,
+                                        dropout_p=dropout)
 
-    def forward(self, *input):
-        pass
+    def forward(self, x):
+
+        # Preprocess module
+        if self.preprocess_module is not None:
+            x = self.preprocess_module(x)
+
+        # Convolution module
+        x = x.transpose(1, 2)
+        x_small = self.conv_small(x)
+        x_large = self.conv_large(x)
+        x = torch.cat([x_small, x_large], dim=1)
+
+        # Classification module
+        x = x.view(-1, training_utils.num_flat_features(x))
+        x = self.fc_module(x)
+
+        return x

@@ -67,6 +67,8 @@ y_test = y_test_14
 # Perform grid search
 # -------------
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 net = NeuralNetClassifier(
     module=my_net,
     criterion=torch.nn.CrossEntropyLoss,
@@ -75,6 +77,7 @@ net = NeuralNetClassifier(
         ('my_cb', utils.MyCallback(params_to_log=utils.get_param_keys(hyper_params))),
         ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
+    device=device
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
