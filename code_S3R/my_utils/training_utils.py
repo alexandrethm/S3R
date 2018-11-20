@@ -45,94 +45,6 @@ class Swish(nn.Module):
         return 'num_parameters={}'.format(self.num_parameters)
 
 
-class GraphConvolution(nn.Module):
-    """
-    Simple GCN layer, similar to https://arxiv.org/abs/1609.02907
-    """
-
-    def __init__(self, in_features, out_features, bias=True):
-        super(GraphConvolution, self).__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.weight = nn.Parameter(torch.FloatTensor(in_features, out_features))
-        if bias:
-            self.bias = nn.Parameter(torch.FloatTensor(out_features))
-        else:
-            self.register_parameter('bias', None)
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        stdv = 1. / np.sqrt(self.weight.size(1))
-        self.weight.data.uniform_(-stdv, stdv)
-        if self.bias is not None:
-            self.bias.data.uniform_(-stdv, stdv)
-
-    def forward(self, input, adj):
-        support = torch.matmul(input, self.weight)
-        output = torch.matmul(adj, support)
-        if self.bias is not None:
-            return output + self.bias
-        else:
-            return output
-
-    def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-               + str(self.in_features) + ' -> ' \
-               + str(self.out_features) + ')'
-
-
-class ShapeGraph(nn.Module):
-    """
-    Transforms a (_, _, 66) input_batch into a (_, _, 22, 3) batch to separate sequences by joint. Each joint
-    has its 3 coordinates.
-    """
-
-    def forward(self, x):
-        return torch.stack(
-            tensors=x.chunk(chunks=22, dim=2),
-            dim=2
-        )
-
-
-class UnshapeGraph(nn.Module):
-    """
-    Transforms a (_, _, 22, f) batch (that went through a graph convolution) into a list of inputs for the following
-    pipelines : [22 * (batch_size, f, temporal_duration)]
-    """
-
-    def forward(self, x):
-        x = list(x.unbind(dim=2))
-        for j in range(len(x)):
-            # x[j] : (batch_size, temporal_duration, f)
-            # with f : nb of features per node, after graph convolutions
-            _, _, f = x[j].size()
-
-            # x[j] : [f * (batch_size, 1, temporal_duration)]
-            x[j] = [x[j][:, :, i].unsqueeze(dim=1) for i in range(f)]
-            # x[j] : (batch_size, f, temporal_duration)
-            x[j] = torch.cat(x[j], dim=1)
-
-        return x
-
-
-class GCN(nn.Module):
-    def __init__(self, f):
-        super().__init__()
-
-        # input : (batch_size, temporal_duration, nb_sequences)
-        self.shape = ShapeGraph()
-        # GraphConv : 3 features per node/joint -> f features per node/joint
-        self.graph_conv = GraphConvolution(3, f)
-        # output : [22 * (batch_size, f, temporal_duration)]
-        self.unshape = UnshapeGraph()
-
-    def forward(self, input, adj):
-        input = self.shape(input)
-        input = self.graph_conv(input, adj)
-        input = self.unshape(input)
-        return input
-
-
 # Different net types
 
 class NetType(Enum):
@@ -201,6 +113,7 @@ def num_flat_features(x):
 def perform_xavier_init(module_lists, modules, activation_fct):
     """
     Perform xavier_init on Conv1d and Linear layers insides the specified modules.
+
     :param module_lists: list of ModuleList objects
     :param modules: list of Module objects
     :param activation_fct:
@@ -250,19 +163,21 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
     """
     Get inputs in the right shape, according to the network type specified.
 
+    - input_batch : (N=batch_size, L=temporal_duration, C=nb_sequences)
+    - output : [n x(N, C=m, L)], where (m, n) = net_shape
+
     :param input_batch: A tensor of gestures. Its shape is (batch_size, temporal_duration, nb_sequences)
     :param net_type: str
     :param net_shape: Network shape (m, n) if required (for networks with pre-processing for instance)
     :return: A list containing the inputs for each pipeline. Its shape is [n x (batch_size, m, temporal_duration)]
-    With each of the n pipelines fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where nb_sequences
-    is the total number of sequences provided as input.
-
-    Note that we are talking about (possibly) preprocessed input and sequences, so nb_sequences is not necessarily
-    the initial nb of sequences (66 for the SHREC data).
     """
     _, _, nb_sequences = input_batch.size()
     m, n = get_network_shape(net_type, net_shape)
     # make sure the dimensions are right
+    # With each of the n pipelines fed with m sequences, it is NECESSARY to have m x n = nb_sequences, where
+    # nb_sequences is the total number of sequences provided as input.
+    # Note that we are talking about (possibly) preprocessed input and sequences, so nb_sequences is not necessarily
+    # the initial nb of sequences (66 for the SHREC data).
     assert m * n == nb_sequences, 'Number of sequences in batch input does not match network shape'
 
     pipeline_inputs = []
@@ -301,31 +216,3 @@ def get_pipeline_inputs(input_batch, net_type, net_shape):
 
             pipeline_inputs.append(pipeline_input)
         return pipeline_inputs
-
-
-# Adjacency matrix of the hand graph
-adj = torch.tensor(
-    [[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-     [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]],
-    dtype=torch.float
-)
