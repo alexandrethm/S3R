@@ -12,24 +12,25 @@ import code_S3R.my_utils.other_utils as utils
 import itertools
 import random
 
-
-hyper_params = [
-    {
-        'max_epochs': [10], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__preprocess': ['LSC', 'graph_conv'],  # or None
-        'module__conv_type': ['regular'],  # or 'temporal'
-        'module__channel_list': [
-            # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
-            [(66,None), (66,33), (66,11)],
-            [(66,None), (66,66), (66,11)],
-            # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
-            # [(66,33), (66,11)],
-        ],
-        'module__activation_fct': ['prelu'],
-        'module__dropout': [0.4],
-    },
-]
+hyper_params = {
+    'max_epochs': [2000], 'batch_size': [64],
+    'lr': [0.0001],
+    'module__preprocess': ['LSC'],  # or None
+    'module__conv_type': ['regular', 'temporal'],
+    'module__channel_list': utils.get_channels_list(nb_configs=50, preprocessing=True),
+    # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+    # [(66, None), (66, 33), (66, 11)],
+    # [(66, None), (66, 66), (66, 11)],
+    # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+    # [(66,33), (66,11)],
+    'module__fc_hidden_layers': [
+        [1936, 64],
+        [1936, 128],
+        [1936, 256],
+    ],
+    'module__activation_fct': ['prelu'],
+    'module__dropout': stats.norm(loc=0.4, scale=0.1),
+}
 
 # -------------
 # Data
@@ -71,18 +72,18 @@ net = NeuralNetClassifier(
     optimizer=torch.optim.Adam,
     callbacks=[
         ('my_cb', utils.MyCallback(param_keys_to_log=utils.get_param_keys(hyper_params), search_run_id=search_run_id,
-                                   log_to_comet_ml=False, log_to_csv=True)),
+                                   log_to_comet_ml=True, log_to_csv=True)),
         ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
     device=device
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
-gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy',
-                  verbose=2, cv=3, error_score=0)
+# gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy',
+#                  verbose=2, cv=3) #error_score=0)
 
-# gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, refit=False, scoring='accuracy',
-#                        verbose=2, cv=3, error_score=0)
+gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, n_iter=200,
+                        refit=False, scoring='accuracy', verbose=2, cv=3)  # , error_score=0)
 
 gs.fit(x_train, y_train)
 
