@@ -22,10 +22,8 @@ class TemporalConvNet(nn.Module):
     """
 
     def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, dropout):
-        # todo: implement groups
         super(TemporalConvNet, self).__init__()
         self.num_channels = num_channels
-
         layers = []
         num_levels = len(num_channels)
         for i in range(num_levels):
@@ -34,7 +32,7 @@ class TemporalConvNet(nn.Module):
             out_channels = num_channels[i]
             layers += [TemporalBlock(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size,
                                      padding=(kernel_size - 1) * dilation_size, activation_fct=activation_fct,
-                                     dropout=dropout)]
+                                     dropout=dropout, groups=groups[i])]
 
         self.network = nn.Sequential(*layers)
 
@@ -43,26 +41,25 @@ class TemporalConvNet(nn.Module):
 
     def get_out_features(self, sequence_length):
         """
-
         Returns: Number of out features (L * C_out)
-
         """
         return self.num_channels[-1] * sequence_length
 
 
 class TemporalBlock(nn.Module):
-    def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, activation_fct, dropout=0.2):
+    def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, groups, activation_fct, dropout=0.2):
+
         super(TemporalBlock, self).__init__()
-        # todo: use pytorch padding left instead of the chomp1d ?
+
         # Block layers
         self.conv1 = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size=kernel_size,
-                                           stride=stride, padding=padding, dilation=dilation))
+                                           stride=stride, padding=padding, dilation=dilation, groups=groups))
         self.chomp1 = Chomp1d(padding)
         self.act1 = activation_fct()
         self.dropout1 = nn.Dropout(dropout)
 
         self.conv2 = weight_norm(nn.Conv1d(n_outputs, n_outputs, kernel_size=kernel_size,
-                                           stride=stride, padding=padding, dilation=dilation))
+                                           stride=stride, padding=padding, dilation=dilation, groups=groups))
         self.chomp2 = Chomp1d(padding)
         self.act2 = activation_fct()
         self.dropout2 = nn.Dropout(dropout)
