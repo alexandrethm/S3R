@@ -15,7 +15,7 @@ import random
 
 hyper_params = [
     {
-        'max_epochs': [1000], 'batch_size': [32],
+        'max_epochs': [10], 'batch_size': [32],
         'lr': [0.0001],
         'module__preprocess': ['LSC', 'graph_conv'],  # or None
         'module__conv_type': ['regular'],  # or 'temporal'
@@ -49,10 +49,10 @@ x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.preprocess
 # Feeding it PyTorch tensors doesn't seem to work, but numpy arrays with the right format is okay
 x_train = x_train.astype(np.float32)
 x_test = x_test.astype(np.float32)
-y_train_14 = y_train_14.astype(np.long)
-y_test_14 = y_test_14.astype(np.long)
-y_train_28 = y_train_28.astype(np.long)
-y_test_28 = y_test_28.astype(np.long)
+y_train_14 = y_train_14.astype(np.int64)
+y_test_14 = y_test_14.astype(np.int64)
+y_train_28 = y_train_28.astype(np.int64)
+y_test_28 = y_test_28.astype(np.int64)
 
 y_train = y_train_14
 y_test = y_test_14
