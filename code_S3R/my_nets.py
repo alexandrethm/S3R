@@ -84,12 +84,12 @@ class Net(nn.Module):
 
         # Parameters quick check
         if preprocess is not None:
-            input_channels = channel_list[0][0]  # int
+            conv_input_channels = channel_list[0][0]  # int
             channel_list = channel_list[1:]  # tuple
             if len(channel_list) == 0:
                 raise AttributeError('Channel list provided does not provide output dims for convolution layers')
         else:
-            input_channels = 66
+            conv_input_channels = 66
         output_channel_list = [tup[0] for tup in channel_list]
         groups = [tup[1] for tup in channel_list]
         if not (isinstance(groups, list) or isinstance(groups, tuple)):
@@ -99,9 +99,9 @@ class Net(nn.Module):
 
         # Preprocess module
         if preprocess is 'LSC':
-            self.preprocess_module = nn.Linear(66, output_channel_list[0])
+            self.preprocess_module = nn.Linear(66, conv_input_channels)
         elif preprocess is 'graph_conv':
-            self.preprocess_module = GCN(output_channel_list[0])
+            self.preprocess_module = GCN(conv_input_channels)
         elif preprocess is None:
             self.preprocess_module = None
         else:
@@ -109,14 +109,14 @@ class Net(nn.Module):
 
         # Convolution module
         if conv_type is 'regular':
-            self.conv_small = RegularConvNet(input_channels, output_channel_list, groups, kernel_size=3,
+            self.conv_small = RegularConvNet(conv_input_channels, output_channel_list, groups, kernel_size=3,
                                              activation_fct=self.activation_fct, pool=self.pool, dropout=dropout)
-            self.conv_large = RegularConvNet(input_channels, output_channel_list, groups, kernel_size=7,
+            self.conv_large = RegularConvNet(conv_input_channels, output_channel_list, groups, kernel_size=7,
                                              activation_fct=self.activation_fct, pool=self.pool, dropout=dropout)
         elif conv_type is 'temporal':
-            self.conv_small = TemporalConvNet(input_channels, output_channel_list, groups, kernel_size=3,
+            self.conv_small = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=3,
                                               activation_fct=self.activation_fct, dropout=dropout)
-            self.conv_large = TemporalConvNet(input_channels, output_channel_list, groups, kernel_size=7,
+            self.conv_large = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=7,
                                               activation_fct=self.activation_fct, dropout=dropout)
         else:
             raise AttributeError('Convolution module {} not recognized'.format(conv_type))
