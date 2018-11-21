@@ -8,7 +8,12 @@ from comet_ml import Experiment
 from scipy import ndimage
 from sklearn.utils import shuffle
 from skorch.callbacks import Callback
+import warnings
 
+
+# Hide warnings
+def hide_scipy_zoom_warnings():
+    warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 
 # Logging -------------
 

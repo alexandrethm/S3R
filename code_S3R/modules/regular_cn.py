@@ -39,8 +39,9 @@ class RegularConvNet(nn.Module):
             in_channels = num_inputs if i == 0 else num_channels[i - 1]
             out_channels = num_channels[i]
             padding = int((kernel_size - 1) / 2)
-            layers += [RegularConvBlock(groups, in_channels, out_channels, kernel_size, padding, activation_fct, pool,
-                                        dropout)]
+            layers += [RegularConvBlock(groups=groups[i], in_channels=in_channels, out_channels=out_channels,
+                                        kernel_size=kernel_size, padding=padding, activation_fct=activation_fct,
+                                        pool=pool, dropout=dropout)]
 
         self.network = nn.Sequential(*layers)
 

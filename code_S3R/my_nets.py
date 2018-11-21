@@ -51,12 +51,16 @@ class Net(nn.Module):
     Args:
         preprocess (str): Specify the preprocessing module, to be applied before the convolutions.
         conv_type (str): Specify the type of convolutions to use.
-        channel_list (list): Specify the number of output channels of preprocessing and convolution layers.
-          If there is a preprocess module, the first number will specify its output channels, and the rest of the list
-          will be for the convolutions layers.
-          If there is none, the whole list will specify the number of output channels of the convolution layers.
-          Note that there is no need to specify the number of convolution layers.
-
+        channel_list (list of tuples): Specify the number of output channels of preprocessing/convolution layers, and
+          the associated parameter (None for preprocessing, and groups for convolutions).
+          If there is a preprocess module, the first tuple of the list will specify its output channels: (C, None)
+          where C is the number of output channels. The rest of the list will be for the convolutions layers.
+          e.g.
+            >>> channel_list = [(C, None), (C_conv1, G_conv1), (C_conv2, G_conv2), ...]
+          If there is none, the whole list will specify the number of output channels of the convolution layers
+          and how to group the convolutions. Note that there is no need to specify the number of convolution layers.
+          e.g.
+            >>> channel_list = [(C_conv1, G_conv1), (C_conv2, G_conv2), ...]
           Be careful though, there may be some restrictions on the values (for graph_conv for example).
         sequence_length (int): Initial sequences temporal duration (number of time steps)
         groups:
@@ -67,9 +71,10 @@ class Net(nn.Module):
     """
 
     def __init__(self, preprocess, conv_type, channel_list, fc_hidden_layers=[1936, 128],
-                 sequence_length=100, groups=1, activation_fct='prelu', dropout=0.4, nb_classes=14):
-        super(Net, self).__init__()
+                 sequence_length=100, activation_fct='prelu', dropout=0.4, nb_classes=14):
 
+        # Init
+        super(Net, self).__init__()
         activations = {
             'relu': nn.ReLU,
             'prelu': nn.PReLU,
@@ -78,34 +83,40 @@ class Net(nn.Module):
         self.activation_fct = activations[activation_fct]
         self.pool = nn.AvgPool1d(kernel_size=2)
 
+        # Parameters quick check
+        if preprocess is not None:
+            input_channels = channel_list[0][0]  # int
+            channel_list = channel_list[1:]  # tuple
+            if len(channel_list) == 0:
+                raise AttributeError('Channel list provided does not provide output dims for convolution layers')
+        else:
+            input_channels = 66
+        output_channel_list = [tup[0] for tup in channel_list]
+        groups = [tup[1] for tup in channel_list]
+        if not (isinstance(groups, list) or isinstance(groups, tuple)):
+            raise AttributeError('The ``channel_list`` argument expects a list of tuples.\n'
+                                 'Example: channel_list = [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]')
+
         # Preprocess module
         if preprocess is 'LSC':
-            self.preprocess_module = nn.Linear(66, channel_list[0])
+            self.preprocess_module = nn.Linear(66, output_channel_list[0])
         elif preprocess is 'graph_conv':
-            self.preprocess_module = GCN(channel_list[0])
+            self.preprocess_module = GCN(output_channel_list[0])
         elif preprocess is None:
             self.preprocess_module = None
         else:
             raise AttributeError('Preprocess module {} not recognized'.format(preprocess))
 
         # Convolution module
-        if preprocess is not None:
-            input_channels = channel_list[0]
-            channel_list = channel_list[1:]
-            if len(channel_list) == 0:
-                raise AttributeError('Channel list provided does not provide output dims for convolution layers')
-        else:
-            input_channels = 66
-
         if conv_type is 'regular':
-            self.conv_small = RegularConvNet(input_channels, channel_list, groups, kernel_size=3,
+            self.conv_small = RegularConvNet(input_channels, output_channel_list, groups, kernel_size=3,
                                              activation_fct=self.activation_fct, pool=self.pool, dropout=dropout)
-            self.conv_large = RegularConvNet(input_channels, channel_list, groups, kernel_size=7,
+            self.conv_large = RegularConvNet(input_channels, output_channel_list, groups, kernel_size=7,
                                              activation_fct=self.activation_fct, pool=self.pool, dropout=dropout)
         elif conv_type is 'temporal':
-            self.conv_small = TemporalConvNet(input_channels, channel_list, groups, kernel_size=3,
+            self.conv_small = TemporalConvNet(input_channels, output_channel_list, groups, kernel_size=3,
                                               activation_fct=self.activation_fct, dropout=dropout)
-            self.conv_large = TemporalConvNet(input_channels, channel_list, groups, kernel_size=7,
+            self.conv_large = TemporalConvNet(input_channels, output_channel_list, groups, kernel_size=7,
                                               activation_fct=self.activation_fct, dropout=dropout)
         else:
             raise AttributeError('Convolution module {} not recognized'.format(conv_type))

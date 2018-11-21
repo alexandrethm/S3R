@@ -9,15 +9,22 @@ from skorch import NeuralNetClassifier, callbacks
 
 from code_S3R import my_nets
 import code_S3R.my_utils.other_utils as utils
+import itertools
+import random
+
 
 hyper_params = [
     {
-        'max_epochs': [5], 'batch_size': [32],
+        'max_epochs': [1000], 'batch_size': [32],
         'lr': [0.0001],
-        'module__preprocess': [None],
-        'module__conv_type': ['temporal'],
+        'module__preprocess': ['LSC', 'graph_conv'],  # or None
+        'module__conv_type': ['regular'],  # or 'temporal'
         'module__channel_list': [
-            [6],
+            # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+            [(66,None), (66,33), (66,11)],
+            [(66,None), (66,66), (66,11)],
+            # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+            # [(66,33), (66,11)],
         ],
         'module__activation_fct': ['prelu'],
         'module__dropout': [0.4],
@@ -27,6 +34,8 @@ hyper_params = [
 # -------------
 # Data
 # -------------
+# keep quiet, scipy
+utils.hide_scipy_zoom_warnings()
 
 # Load the dataset
 x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.load_data()
