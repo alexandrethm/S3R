@@ -3,9 +3,9 @@ from datetime import datetime
 
 import numpy
 import pandas
-import torch
 from comet_ml import Experiment
-from scipy import ndimage
+import torch
+from scipy import ndimage, random
 from sklearn.utils import shuffle
 from skorch.callbacks import Callback
 import warnings
@@ -15,6 +15,42 @@ import warnings
 def hide_scipy_zoom_warnings():
     warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 
+
+# Get hyper params
+def get_channels_list(nb_configs, preprocessing):
+
+    def _gcl(preprocessing):
+        max_depth = 5
+
+        hyper_params = []
+
+        for depth in range(1, max_depth+1):
+            for G in [1, 3, 11, 22, 66]:
+
+                channel_list = []
+
+                # add preprocessing layer
+                upper_bound_preprocess = int(2 * 66 / G)
+                # Choose a random number of channels between 1 and 2*66, no matter the G
+                c = G * random.randint(1, upper_bound_preprocess + 1)
+                channel_list.append((c, None))
+
+                # add convolution layers
+                upper_bound_conv = int(4 * 66 / G)
+                for layer in range(depth):
+                    # Choose a random number of channels between 1 and 4*66, no matter the G
+                    c = G * random.randint(1, upper_bound_conv + 1)
+                    channel_list.append((c, G))
+
+                hyper_params.append(channel_list)
+
+        return hyper_params
+
+    hyper_params_list = []
+    for i in range(nb_configs):
+        hyper_params_list += _gcl(preprocessing=preprocessing)
+
+    return hyper_params_list
 
 # Logging -------------
 
@@ -164,20 +200,21 @@ def resize_sequences_length(x_train, x_test, final_length=100):
     Resize the time series by interpolating them to the same length
     """
     x_train = numpy.array([
-        numpy.array([
-            ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in range(numpy.size(x_i, 1))
-        ]).T
-        for x_i
-        in x_train
-    ])
+                              numpy.array([
+                                              ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
+                                              range(numpy.size(x_i, 1))
+                                              ]).T
+                              for x_i
+                              in x_train
+                              ])
     x_test = numpy.array([
-        numpy.array([
-            ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
-            range(numpy.size(x_i, 1))
-        ]).T
-        for x_i
-        in x_test
-    ])
+                             numpy.array([
+                                             ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
+                                             range(numpy.size(x_i, 1))
+                                             ]).T
+                             for x_i
+                             in x_test
+                             ])
     return x_train, x_test
 
 
