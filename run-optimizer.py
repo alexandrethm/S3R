@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import comet_ml
 import torch
@@ -10,31 +12,12 @@ import code_S3R.my_utils.other_utils as utils
 
 hyper_params = [
     {
-        'max_epochs': [1000], 'batch_size': [32],
+        'max_epochs': [5], 'batch_size': [32],
         'lr': [0.0001],
-        'module__preprocess': ['LSC', 'graph_conv'],
+        'module__preprocess': [None],
         'module__conv_type': ['temporal'],
         'module__channel_list': [
             [6],
-            [22],
-            [33],
-            [66],
-            [33, 11],
-            [66, 22],
-        ],
-        'module__activation_fct': ['prelu'],
-        'module__dropout': [0.4],
-    },
-    {
-        'max_epochs': [1000], 'batch_size': [32],
-        'lr': [0.0001],
-        'module__preprocess': ['LSC', 'graph_conv'],
-        'module__conv_type': ['regular'],
-        'module__channel_list': [
-            [66, 33],
-            [66, 11],
-            [66, 66, 33],
-            [66, 33, 22, 22],
         ],
         'module__activation_fct': ['prelu'],
         'module__dropout': [0.4],
@@ -70,13 +53,16 @@ y_test = y_test_14
 # -------------
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# unique identifier for the grid_search / random_search run
+search_run_id = 'grid_search_{:%m%d_%H%M}'.format(datetime.now())
 
 net = NeuralNetClassifier(
     module=my_nets.Net,
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
-        ('my_cb', utils.MyCallback(params_to_log=utils.get_param_keys(hyper_params))),
+        ('my_cb', utils.MyCallback(param_keys_to_log=utils.get_param_keys(hyper_params), search_run_id=search_run_id,
+                                   log_to_comet_ml=False, log_to_csv=True)),
         ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
     device=device
@@ -84,10 +70,10 @@ net = NeuralNetClassifier(
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
 gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy',
-                  verbose=2, cv=5, error_score=0)
+                  verbose=2, cv=3, error_score=0)
 
 # gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, refit=False, scoring='accuracy',
-#                        verbose=2, cv=5, error_score=0)
+#                        verbose=2, cv=3, error_score=0)
 
 gs.fit(x_train, y_train)
 
@@ -95,4 +81,4 @@ gs.fit(x_train, y_train)
 # Save and log results
 # -------------
 
-utils.save_and_print_results(cv_results=gs.cv_results_, grid_search_params=hyper_params)
+utils.save_and_print_results(search_run_id=search_run_id, cv_results=gs.cv_results_, grid_search_params=hyper_params)

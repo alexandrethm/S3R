@@ -1,3 +1,4 @@
+import pathlib
 from datetime import datetime
 
 import numpy
@@ -13,79 +14,128 @@ from skorch.callbacks import Callback
 
 class MyCallback(Callback):
     """
-    Calls comet.ml methods to log data at each run.
+    Log data at each run (hyper-parameters and metrics), and save it in a CSV file and/or in a comet_ml experiment.
+
+
+    Args:
+        params_to_log (list): The names of the hyper-parameters to log
+        search_run_id (str): Unique identifier or the grid search
+        log_to_csv (bool):
+        log_to_comet_ml (bool):
+
     """
 
+    # place here attributes that are not fed as arguments to the __init__ method
     experiment = None
+    params_to_log = None
 
-    def __init__(self, params_to_log) -> None:
-        self.params_to_log = params_to_log
+    def __init__(self, param_keys_to_log, search_run_id, log_to_csv=True, log_to_comet_ml=True) -> None:
+        self.param_keys_to_log = param_keys_to_log
+        self.search_run_id = search_run_id
+        self.log_to_csv = log_to_csv
+        self.log_to_comet_ml = log_to_comet_ml
 
     def on_train_begin(self, net, **kwargs):
         """
-        Create a comet.ml experiment and log hyper-parameters specified in params_to_log.
-        :param net:
-        :return:
+        If log_to_comet_ml=True, create a comet.ml experiment and log hyper-parameters specified in params_to_log.
+
+        If log_to_csv=True, create a new csv
+
+        Args:
+            net:
+            **kwargs:
+
         """
         params = net.get_params()
-        params_to_log = {}
-        for key in self.params_to_log:
+        self.params_to_log= {}
+        for key in self.param_keys_to_log:
             try:
-                params_to_log[key] = params[key]
+                self.params_to_log[key] = params[key]
             except KeyError:
                 # in case params[key] is not found (for some grid searches it can be the case)
-                params_to_log[key] = None
+                self.params_to_log[key] = None
 
-        self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
-        self.experiment.log_multiple_params(params_to_log)
-        self.experiment.set_model_graph(net.__str__())
+        if self.log_to_comet_ml:
+            self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
+            self.experiment.log_multiple_params(self.params_to_log)
+            self.experiment.set_model_graph(net.__str__())
+            self.experiment.set_name(self.search_run_id)
 
     def on_epoch_end(self, net, **kwargs):
         """
-        Log epoch metrics to comet.ml
-        :param net:
-        :param kwargs:
-        :return:
+        Log epoch metrics to comet.ml if required
         """
         data = net.history[-1]
-        self.experiment.log_multiple_metrics(
-            dic=dict((key, data[key]) for key in [
-                'valid_acc',
-                'valid_loss',
-                'train_loss',
-            ]),
-            step=data['epoch']
-        )
+
+        if self.log_to_comet_ml:
+            self.experiment.log_multiple_metrics(
+                dic=dict((key, data[key]) for key in [
+                    'valid_acc',
+                    'valid_loss',
+                    'train_loss',
+                ]),
+                step=data['epoch']
+            )
+
+    def on_train_end(self, net, X=None, y=None, **kwargs):
+        """
+        Save the metrics in a csv file if required
+        """
+        if self.log_to_csv:
+            valid_acc_data = net.history[:, 'valid_acc']
+            valid_loss_data = net.history[:, 'valid_loss']
+            train_loss_data = net.history[:, 'train_loss']
+
+            run_results = pandas.DataFrame({
+                'params': self.params_to_log,
+                'data': {
+                    'valid_acc': valid_acc_data,
+                    'valid_loss': valid_loss_data,
+                    'train_loss': train_loss_data,
+                }
+            })
+
+            file_name = 'data_{:%H%M%S}.csv'.format(datetime.now())
+
+            # create the directory if does not exist, without raising an error if it does already exist
+            pathlib.Path('results/{}'.format(self.search_run_id)).mkdir(parents=True, exist_ok=True)
+
+            # save the file
+            run_results.to_csv(path_or_buf='results/{}/{}'.format(self.search_run_id, file_name))
 
 
-def save_and_print_results(cv_results, grid_search_params):
+def save_and_print_results(search_run_id, cv_results, grid_search_params):
     """
     Save results as a csv file.
     Print :
         - Best score with the corresponding params
         - Filename of the csv file
         - All the results just in case
-    :param cv_results: A GridSearchCV.cv_results_ attribute
-    :param grid_search_params:
-    :return:
+
+    Args:
+        grid_search_params:
+        cv_results:
+        search_run_id:
     """
     results = pandas.DataFrame(cv_results).sort_values('rank_test_score')
 
-    # select filename and important columns to save
-    file_name = 'grid_{:%m%d_%H%M}'.format(datetime.now())
+    # create the directory if does not exist, without raising an error if it does already exist
+    pathlib.Path('results/{}'.format(search_run_id)).mkdir(parents=True, exist_ok=True)
+
+    # select important columns to save
     columns = ['rank_test_score', 'mean_test_score', 'std_test_score']
     for key in get_param_keys(grid_search_params):
         columns.append('param_' + key)
     columns.append('mean_fit_time')
 
     # save important results
-    results.to_csv(path_or_buf='./run-data/grid_searches/{}.csv'.format(file_name),
+    results.to_csv(path_or_buf='results/{}/summary.csv'.format(search_run_id),
                    columns=columns)
-    # save all results, without excluding some columns
-    results.to_csv(path_or_buf='./run-data/grid_searches/detailed_grid_results/{}_all.csv'.format(file_name))
+    # save all search results, without excluding some columns
+    results.to_csv(path_or_buf='results/{}/detailed.csv'.format(search_run_id))
 
     print('------')
-    print('Results saved as {}.csv'.format(file_name))
+    print('Results saved with search_run_id {}'.format(search_run_id))
     print('All results just in case :\n', cv_results)
 
 

@@ -22,17 +22,13 @@ class FullyConnected(nn.Module):
     def __init__(self, input_layer, hidden_layers, nb_classes, activation_fct_class, dropout_p=None):
         super(FullyConnected, self).__init__()
         self.activation_fct_class = activation_fct_class
-        self.activation_fct_name = self.activation_fct_class.__name__
-        self.activation_fct_name = self.activation_fct_name.lower()
-        if self.activation_fct_name is 'leakyrelu':
-            self.activation_fct_name = 'leaky_relu'
         self.dropout_p = dropout_p
 
         nb_neurons = [input_layer] + hidden_layers + [nb_classes]  # merges the three lists
 
         layers = []
-        for idx in range(len(nb_neurons) -1):
-            layers.append(nn.Linear(in_features=nb_neurons[idx], out_features=nb_neurons[idx+1]))
+        for idx in range(len(nb_neurons) - 1):
+            layers.append(nn.Linear(in_features=nb_neurons[idx], out_features=nb_neurons[idx + 1]))
             layers.append(self.activation_fct_class())
             if self.dropout_p is not None:
                 layers.append(nn.Dropout(self.dropout_p))
@@ -42,7 +38,7 @@ class FullyConnected(nn.Module):
 
     def init_weights(self):
         training_utils.perform_xavier_init(module_list=[self.network],
-                                           activation_fct=self.activation_fct_name)
+                                           activation_fct=self.activation_fct_class.__name__)
 
     def forward(self, x):
         return self.network(x)

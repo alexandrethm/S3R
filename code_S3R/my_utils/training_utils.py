@@ -41,10 +41,8 @@ def perform_xavier_init(module_list, activation_fct):
     """
     for module in module_list:
         if module.__class__.__name__ == 'Conv1d' or module.__class__.__name__ == 'Linear':
-            print(module)
             xavier_init(module, activation_fct)
         elif module.__class__.__name__ == 'Sequential':
             for sub_module in module:
                 if sub_module.__class__.__name__ == 'Conv1d' or sub_module.__class__.__name__ == 'Linear':
-                    print(sub_module)
                     xavier_init(sub_module, activation_fct)
