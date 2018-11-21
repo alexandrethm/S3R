@@ -40,7 +40,7 @@ class Net(nn.Module):
         - None for no preprocessing module
 
     2. Convolution module
-        - 'TCN'
+        - 'temporal'
         - 'regular
 
     3. Classification module (fully connected layers)
@@ -63,7 +63,6 @@ class Net(nn.Module):
             >>> channel_list = [(C_conv1, G_conv1), (C_conv2, G_conv2), ...]
           Be careful though, there may be some restrictions on the values (for graph_conv for example).
         sequence_length (int): Initial sequences temporal duration (number of time steps)
-        groups:
         activation_fct (str): The activation function to use for all modules. Can be 'relu', 'prelu' or 'swish'
         dropout (float): Dropout parameter between 0 and 1
         fc_hidden_layers (list): Size of the (not necessary) fully connected hidden layers of the classification module
@@ -95,7 +94,8 @@ class Net(nn.Module):
         groups = [tup[1] for tup in channel_list]
         if not (isinstance(groups, list) or isinstance(groups, tuple)):
             raise AttributeError('The ``channel_list`` argument expects a list of tuples.\n'
-                                 'Example: channel_list = [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]')
+                                 'Example: channel_list = [<(C_preprocess, None)>, (C_conv1, G_conv1),'
+                                 ' (C_conv2, G_conv2), (C_conv3, G_conv3), ...]')
 
         # Preprocess module
         if preprocess is 'LSC':

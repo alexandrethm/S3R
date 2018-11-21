@@ -53,8 +53,8 @@ class GCN(nn.Module):
     def __init__(self, output_channels):
         super(GCN, self).__init__()
         if output_channels % 22 != 0:
-            raise AttributeError('Wrong parameter specified for output_channels ({}), it must be ' \
-                                          'divisible by the number of nodes of the graph'.format(output_channels))
+            raise AttributeError('Wrong parameter specified for output_channels ({}), '
+                                 'it must be divisible by the number of nodes of the graph'.format(output_channels))
         f = int(output_channels / 22)
 
         # input : (batch_size, temporal_duration, nb_sequences)

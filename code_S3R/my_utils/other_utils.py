@@ -15,6 +15,7 @@ import warnings
 def hide_scipy_zoom_warnings():
     warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 
+
 # Logging -------------
 
 class MyCallback(Callback):
@@ -23,7 +24,7 @@ class MyCallback(Callback):
 
 
     Args:
-        params_to_log (list): The names of the hyper-parameters to log
+        param_keys_to_log (list): The names of the hyper-parameters to log
         search_run_id (str): Unique identifier or the grid search
         log_to_csv (bool):
         log_to_comet_ml (bool):
@@ -52,7 +53,7 @@ class MyCallback(Callback):
 
         """
         params = net.get_params()
-        self.params_to_log= {}
+        self.params_to_log = {}
         for key in self.param_keys_to_log:
             try:
                 self.params_to_log[key] = params[key]
@@ -64,7 +65,7 @@ class MyCallback(Callback):
             self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
             self.experiment.log_multiple_params(self.params_to_log)
             self.experiment.set_model_graph(net.__str__())
-            self.experiment.set_name(self.search_run_id)
+            self.experiment.add_tag(self.search_run_id)
 
     def on_epoch_end(self, net, **kwargs):
         """
