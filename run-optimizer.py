@@ -82,8 +82,8 @@ net.set_params(callbacks__print_log=None)  # deactivate default score printing e
 # gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy',
 #                  verbose=2, cv=3) #error_score=0)
 
-gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, n_iter=200,
-                        refit=False, scoring='accuracy', verbose=2, cv=3)  # , error_score=0)
+gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, n_iter=2,
+                        refit=False, scoring='accuracy', verbose=2, cv=3, error_score=np.nan)
 
 gs.fit(x_train, y_train)
 

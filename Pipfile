@@ -11,6 +11,7 @@ torchvision = "*"
 comet-ml = "*"
 pandas = "*"
 skorch = "*"
+matplotlib = "*"
 
 [dev-packages]
 

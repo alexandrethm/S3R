@@ -102,7 +102,9 @@ class MyCallback(Callback):
             self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
             self.experiment.log_multiple_params(self.params_to_log)
             self.experiment.set_model_graph(net.__str__())
-            self.experiment.add_tag(self.search_run_id)
+
+            # make it easier to regroup experiments by grid_search
+            self.experiment.log_other('search_run_id', self.search_run_id)
 
     def on_epoch_end(self, net, **kwargs):
         """
