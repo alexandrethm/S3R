@@ -1,3 +1,4 @@
+import os
 import pathlib
 from datetime import datetime
 
@@ -18,13 +19,12 @@ def hide_scipy_zoom_warnings():
 
 # Get hyper params
 def get_channels_list(nb_configs, preprocessing):
-
     def _gcl(preprocessing):
         max_depth = 5
 
         hyper_params = []
 
-        for depth in range(1, max_depth+1):
+        for depth in range(1, max_depth + 1):
             for G in [1, 3, 11, 22, 66]:
 
                 channel_list = []
@@ -52,6 +52,7 @@ def get_channels_list(nb_configs, preprocessing):
         hyper_params_list += _gcl(preprocessing=preprocessing)
 
     return hyper_params_list
+
 
 # Logging -------------
 
@@ -99,7 +100,7 @@ class MyCallback(Callback):
                 self.params_to_log[key] = None
 
         if self.log_to_comet_ml:
-            self.experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
+            self.experiment = Experiment(api_key=os.environ['COMET_ML_API_KEY'], project_name='S3R-V2')
             self.experiment.log_multiple_params(self.params_to_log)
             self.experiment.set_model_graph(net.__str__())
 
@@ -203,21 +204,21 @@ def resize_sequences_length(x_train, x_test, final_length=100):
     Resize the time series by interpolating them to the same length
     """
     x_train = numpy.array([
-                              numpy.array([
-                                              ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
-                                              range(numpy.size(x_i, 1))
-                                              ]).T
-                              for x_i
-                              in x_train
-                              ])
+        numpy.array([
+            ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
+            range(numpy.size(x_i, 1))
+        ]).T
+        for x_i
+        in x_train
+    ])
     x_test = numpy.array([
-                             numpy.array([
-                                             ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
-                                             range(numpy.size(x_i, 1))
-                                             ]).T
-                             for x_i
-                             in x_test
-                             ])
+        numpy.array([
+            ndimage.zoom(x_i.T[j], final_length / len(x_i), mode='reflect') for j in
+            range(numpy.size(x_i, 1))
+        ]).T
+        for x_i
+        in x_test
+    ])
     return x_train, x_test
 
 
