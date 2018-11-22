@@ -29,14 +29,15 @@ def get_channels_list(nb_configs, preprocessing):
 
                 channel_list = []
 
-                # add preprocessing layer
-                upper_bound_preprocess = int(2 * 66 / G)
-                # Choose a random number of channels between 1 and 2*66, no matter the G
-                c = G * random.randint(1, upper_bound_preprocess + 1)
-                channel_list.append((c, None))
+                if preprocessing:
+                    # add preprocessing layer
+                    upper_bound_preprocess = int(2 * 66 / G)
+                    # Choose a random number of channels between 1 and 2*66, no matter the G
+                    c = G * random.randint(1, upper_bound_preprocess + 1)
+                    channel_list.append((c, None))
 
                 # add convolution layers
-                upper_bound_conv = int(4 * 66 / G)
+                upper_bound_conv = int(2 * 66 / G)
                 for layer in range(depth):
                     # Choose a random number of channels between 1 and 4*66, no matter the G
                     c = G * random.randint(1, upper_bound_conv + 1)
