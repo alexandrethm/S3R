@@ -102,11 +102,12 @@ def merge_and_write_csvs(csv_list, name):
     df_out = pandas.concat([df_csv_out, df_recorded_metrics], axis=1, sort=False)
 
     # Save as CSV file
-    df_out.to_csv(path_or_buf=name.replace('data_', 'experiment_'))
+    df_out.to_csv(path_or_buf=name.replace('data_', 'experiment_'),
+                  header=False)  # header=False to keep columns names in the first line
 
 
-def main():
-    csv_files, csvs = list_csv_in_folder()  # todo: support path
+def main(path):
+    csv_files, csvs = list_csv_in_folder(path=path)
 
     experiment_start_idx = 0
     experiment_list = [csvs[0]]
@@ -134,4 +135,13 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Merge .csv results with the same hyper-parameters (but from different'
+                                                 ' splits in a k-fold validation) into a single .csv file.\n'
+                                                 'Also compute min, max, mean and std data plots.')
+    parser.add_argument('--path', metavar='path', required=True,
+                        help='Path to the grid_search folder containing all the .csv results of the grid (or random)'
+                             'search.')
+    args = parser.parse_args()
+    main(path=args.path)
