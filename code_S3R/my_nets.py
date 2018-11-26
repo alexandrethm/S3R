@@ -3,10 +3,10 @@ from torch import nn
 
 from code_S3R.modules.activation_fct import Swish
 from code_S3R.modules.fully_connected import FullyConnected
+from code_S3R.modules.gcn import GCN
 from code_S3R.modules.regular_cn import RegularConvNet
 from code_S3R.modules.tcn import TemporalConvNet
 from code_S3R.my_utils import training_utils
-from code_S3R.modules.gcn import GCN
 
 
 class Net(nn.Module):
@@ -134,14 +134,21 @@ class Net(nn.Module):
 
     def forward(self, x):
 
+        # x_initial_df = pandas.DataFrame(x[0, :, :].tolist())
+
         # Preprocess module
         if self.preprocess_module is not None:
             x = self.preprocess_module(x)
+        # x_preprocessed_df = pandas.DataFrame(x[0, :, :].tolist())
 
         # Convolution module
         x = x.transpose(1, 2)
         x_small = self.conv_small(x)
         x_large = self.conv_large(x)
+
+        # x_conv_df = pandas.DataFrame(x_large[0, :, :].tolist())
+        # plot_hand_graph.save_x_to_csv(x_initial_df, x_preprocessed_df, x_conv_df)
+
         x = torch.cat([x_small, x_large], dim=1)
 
         # Classification module

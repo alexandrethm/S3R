@@ -1,8 +1,5 @@
 # run and data directories
-# exclude everything in run-data directory
-run-data/*
-# except grid searches results
-!run-data/grid_searches
+plots
 data
 
 

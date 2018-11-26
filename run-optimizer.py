@@ -9,8 +9,6 @@ from skorch import NeuralNetClassifier, callbacks
 
 from code_S3R import my_nets
 import code_S3R.my_utils.other_utils as utils
-import itertools
-import random
 
 hyper_params = {
     'max_epochs': [2000], 'batch_size': [64],
