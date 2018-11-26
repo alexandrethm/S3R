@@ -4,6 +4,61 @@ import numpy as np
 import torch.nn.functional as F
 
 
+class TransposeAxesOneAndTwo(nn.Module):
+    def __init__(self):
+        super(TransposeAxesOneAndTwo, self).__init__()
+
+    def forward(self, x):
+        return x.transpose(1, 2)
+
+
+class DotAttention(nn.Module):
+
+    def __init__(self):
+        super(DotAttention, self).__init__()
+        self.softmax = nn.Softmax(dim=2)
+
+    def forward(self, seq):
+        """seq: 32, L, C  (we put our attention on the first dim (dim=1), of length L)"""
+
+        attn = torch.bmm(seq, seq.transpose(1, 2))
+        attn = self.softmax(attn)
+
+        output = torch.bmm(attn, seq)
+
+        # return output, attn
+        return output
+
+
+class GeneralSelfAttention(nn.Module):
+
+    def __init__(self, C):
+        super(GeneralSelfAttention, self).__init__()
+        self.softmax = nn.Softmax(dim=2)
+        self.C = C
+        self.linear = torch.nn.Linear(C, C, bias=False)
+        torch.nn.init.xavier_uniform_(self.linear.weight)
+        # self.linear.weight.data.copy_(torch.eye(C))
+
+    def forward(self, seq):
+
+        # Q: What happens when we do  y = self.linear(x, bias=False)  ?  Do we learn a matrix A such as y = A x  ?
+        # A: No. It is not what we might have thought!
+        #    We learn A such as  y = x At  where At is the transpose matrix of A
+
+        # In this attention mechanism we want a W such as  y = x W xt x
+
+        # so we compute   self.linear(seq)  <=>  x W  <=> x At  where W=At (whatever, since we learn the matrix!)
+        # and use good old fashionned matrix multiplications
+
+        attn = torch.bmm(self.linear(seq), seq.transpose(1,2))
+        attn = self.softmax(attn)
+
+        output = torch.bmm(attn, seq)
+
+        return output
+
+
 # Attention
 #
 #    Attention Score Functions:
@@ -18,6 +73,16 @@ import torch.nn.functional as F
 #        - https://medium.com/syncedreview/a-brief-overview-of-attention-mechanism-13c578ba9129
 #        - https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html
 #        - http://cnyah.com/2017/08/01/attention-variants/
+
+
+class SelfAttention1D(nn.Module):
+
+    def __init__(self, hidden_size, attention_method='luong_general'):
+        super(SelfAttention1D, self).__init__()
+        self.att = LuongAttention(method='general', hidden_size=hidden_size)
+
+    def forward(self, seq):
+        return self.att(seq, seq)
 
 
 class BahdanauAttention(nn.Module):
@@ -56,6 +121,8 @@ class BahdanauAttention(nn.Module):
 
 
 class LuongAttention(torch.nn.Module):
+
+    """TODO: bugged ?"""
 
     def __init__(self, method, hidden_size):
         """
@@ -97,10 +164,17 @@ class LuongAttention(torch.nn.Module):
         attn_energies = attn_energies.t()
 
         # Return the softmax normalized probability scores (with added dimension)
-        return F.softmax(attn_energies, dim=1).unsqueeze(1)
+        attn = F.softmax(attn_energies, dim=1).unsqueeze(1)
+
+        # TOOD: check this is correct
+        output = torch.bmm(attn, hidden)
+        return output, attn
+
 
 
 class ScaledDotProductAttention(nn.Module):
+
+    """Looks OK"""
 
     def __init__(self, temperature, attn_dropout=0.1):
         """

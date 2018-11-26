@@ -1,6 +1,7 @@
 from torch import nn
 from torch.nn.utils import weight_norm
 
+from code_S3R.modules.attention import DotAttention, GeneralSelfAttention, TransposeAxesOneAndTwo
 from code_S3R.my_utils.training_utils import perform_xavier_init
 
 
@@ -26,7 +27,7 @@ class RegularConvNet(nn.Module):
         dropout (float):
     """
 
-    def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, pool, dropout):
+    def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, pool, dropout, temporal_attention):
         super(RegularConvNet, self).__init__()
         self.num_channels = num_channels
         self.kernel_size = kernel_size
@@ -42,6 +43,10 @@ class RegularConvNet(nn.Module):
             layers += [RegularConvBlock(groups=groups[i], in_channels=in_channels, out_channels=out_channels,
                                         kernel_size=kernel_size, padding=padding, activation_fct=activation_fct,
                                         pool=pool, dropout=dropout)]
+            if temporal_attention == 'dot_attention':
+                layers += [TransposeAxesOneAndTwo(), DotAttention()], TransposeAxesOneAndTwo()
+            elif temporal_attention == 'general_attention':
+                layers += [TransposeAxesOneAndTwo(), GeneralSelfAttention(C=out_channels), TransposeAxesOneAndTwo()]
 
         self.network = nn.Sequential(*layers)
 

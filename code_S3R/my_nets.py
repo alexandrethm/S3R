@@ -69,7 +69,7 @@ class Net(nn.Module):
         nb_classes (int): Number of output classes
     """
 
-    def __init__(self, preprocess, conv_type, channel_list, fc_hidden_layers=[1936, 128],
+    def __init__(self, preprocess, conv_type, channel_list, temporal_attention, fc_hidden_layers=[1936, 128],
                  sequence_length=100, activation_fct='prelu', dropout=0.4, nb_classes=14):
 
         # Init
@@ -110,14 +110,18 @@ class Net(nn.Module):
         # Convolution module
         if conv_type is 'regular':
             self.conv_small = RegularConvNet(conv_input_channels, output_channel_list, groups, kernel_size=3,
-                                             activation_fct=self.activation_fct, pool=self.pool, dropout=dropout)
+                                             activation_fct=self.activation_fct, pool=self.pool, dropout=dropout,
+                                             temporal_attention=temporal_attention)
             self.conv_large = RegularConvNet(conv_input_channels, output_channel_list, groups, kernel_size=7,
-                                             activation_fct=self.activation_fct, pool=self.pool, dropout=dropout)
+                                             activation_fct=self.activation_fct, pool=self.pool, dropout=dropout,
+                                             temporal_attention=temporal_attention)
         elif conv_type is 'temporal':
             self.conv_small = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=3,
-                                              activation_fct=self.activation_fct, dropout=dropout)
+                                              activation_fct=self.activation_fct, dropout=dropout,
+                                              temporal_attention=temporal_attention)
             self.conv_large = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=7,
-                                              activation_fct=self.activation_fct, dropout=dropout)
+                                              activation_fct=self.activation_fct, dropout=dropout,
+                                              temporal_attention=temporal_attention)
         else:
             raise AttributeError('Convolution module {} not recognized'.format(conv_type))
 

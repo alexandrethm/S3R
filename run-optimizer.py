@@ -23,6 +23,7 @@ hyper_params = {
     # [(66, None), (66, 66), (66, 11)],
     # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
     # [(66,33), (66,11)],
+    'module__temporal_attention': ['dot_attention', 'general_attention', None],
     'module__fc_hidden_layers': [
         [1936, 64],
         [1936, 128],
