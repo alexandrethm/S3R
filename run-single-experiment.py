@@ -1,49 +1,90 @@
-import time
+from datetime import datetime
 
-from comet_ml import Experiment
+import numpy as np
+import comet_ml
+import torch
+from scipy import stats
+from sklearn.model_selection import *
+from skorch import NeuralNetClassifier, callbacks
 
-from code_S3R import my_utils
+from code_S3R import my_nets
+import code_S3R.my_utils.other_utils as utils
 
 hyper_params = {
-    'net_type': 'xyz',
-    'activation_fct': 'relu',
-    'temporal_duration': 100,
-
-    'learning_rate': 1e-3,
-    'num_epochs': 200,
-    'batch_size': 32,
+    'max_epochs': 2000, 'batch_size': 64,
+    'lr': 0.0001,
+    'preprocess': 'graph_conv',  # or None
+    'conv_type': 'temporal',
+    'channel_list': [(66, None), (66, 66)],
+    # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+    # [(66, None), (66, 33), (66, 11)],
+    # [(66, None), (66, 66), (66, 11)],
+    # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+    # [(66,33), (66,11)],
+    'fc_hidden_layers': [1936, 128],
+    'activation_fct': 'prelu',
+    'dropout': 0.4,
 }
 
 # -------------
 # Data
 # -------------
+# keep quiet, scipy
+utils.hide_scipy_zoom_warnings()
 
 # Load the dataset
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = my_utils.load_data()
+x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.load_data()
 # Shuffle sequences and resize sequences
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = my_utils.preprocess_data(x_train, x_test,
-                                                                                         y_train_14,
-                                                                                         y_train_28,
-                                                                                         y_test_14, y_test_28,
-                                                                                         temporal_duration=hyper_params[
-                                                                                             'temporal_duration'])
-# Convert to pytorch variables
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = my_utils.convert_to_pytorch_tensors(x_train, x_test,
-                                                                                                    y_train_14,
-                                                                                                    y_train_28,
-                                                                                                    y_test_14,
-                                                                                                    y_test_28)
+x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.preprocess_data(x_train, x_test,
+                                                                                      y_train_14,
+                                                                                      y_train_28,
+                                                                                      y_test_14, y_test_28,
+                                                                                      temporal_duration=100)
+
+# Feeding it PyTorch tensors doesn't seem to work, but numpy arrays with the right format is okay
+x_train = x_train.astype(np.float32)
+x_test = x_test.astype(np.float32)
+y_train_14 = y_train_14.astype(np.int64)
+y_test_14 = y_test_14.astype(np.int64)
+y_train_28 = y_train_28.astype(np.int64)
+y_test_28 = y_test_28.astype(np.int64)
+
 y_train = y_train_14
 y_test = y_test_14
 
 # -------------
-# Experiment
+# Perform grid search
 # -------------
-time_tag = time.strftime('%d-%m_%H:%M:%S')
-experiment_name = '{}/{}'.format('SHREC14', time_tag)
 
-experiment = Experiment(api_key='Tz0dKZfqyBRMdGZe68FxU3wvZ', project_name='S3R')
-experiment.log_multiple_params(hyper_params)
-experiment.set_name(experiment_name)
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# unique identifier for the grid_search / random_search run
+search_run_id = 'grid_search_{:%m%d_%H%M}'.format(datetime.now())
 
-my_utils.perform_training(x_train, y_train, x_test, y_test, hyper_params, experiment)
+net = NeuralNetClassifier(
+    module=my_nets.Net,
+    max_epochs=2000, batch_size=64,
+    lr=0.0001,
+    module__preprocess='graph_conv',  # or None
+    module__conv_type='temporal',
+    module__channel_list=[(66, None), (66, 1)],
+    # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+    # [(66, None), (66, 33), (66, 11)],
+    # [(66, None), (66, 66), (66, 11)],
+    # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
+    # [(66,33), (66,11)],
+    module__fc_hidden_layers=[1936, 128],
+    module__activation_fct='prelu',
+    module__dropout=0.4,
+
+    criterion=torch.nn.CrossEntropyLoss,
+    optimizer=torch.optim.Adam,
+    callbacks=[
+        ('my_cb', utils.MyCallback(param_keys_to_log=utils.get_param_keys(hyper_params),
+                                   search_run_id=search_run_id,
+                                   log_to_comet_ml=False, log_to_csv=True)),
+        ('early_stopping', callbacks.EarlyStopping(patience=50))
+    ],
+    device=device
+)
+
+net.fit(x_train, y_train_14)
