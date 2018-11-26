@@ -36,7 +36,7 @@ class TemporalConvNet(nn.Module):
                                      padding=(kernel_size - 1) * dilation_size, activation_fct=activation_fct,
                                      dropout=dropout, groups=groups[i])]
             if temporal_attention == 'dot_attention':
-                layers += [TransposeAxesOneAndTwo(), DotAttention()], TransposeAxesOneAndTwo()
+                layers += [TransposeAxesOneAndTwo(), DotAttention(), TransposeAxesOneAndTwo()]
             elif temporal_attention == 'general_attention':
                 layers += [TransposeAxesOneAndTwo(), GeneralSelfAttention(C=out_channels), TransposeAxesOneAndTwo()]
 

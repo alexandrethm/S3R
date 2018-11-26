@@ -44,7 +44,7 @@ class RegularConvNet(nn.Module):
                                         kernel_size=kernel_size, padding=padding, activation_fct=activation_fct,
                                         pool=pool, dropout=dropout)]
             if temporal_attention == 'dot_attention':
-                layers += [TransposeAxesOneAndTwo(), DotAttention()], TransposeAxesOneAndTwo()
+                layers += [TransposeAxesOneAndTwo(), DotAttention(), TransposeAxesOneAndTwo()]
             elif temporal_attention == 'general_attention':
                 layers += [TransposeAxesOneAndTwo(), GeneralSelfAttention(C=out_channels), TransposeAxesOneAndTwo()]
 
