@@ -7,6 +7,7 @@ from matplotlib import animation
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
+import os
 
 
 test_path = 'plots/test2'
@@ -21,7 +22,7 @@ def save_x_to_csv(x_initial_df, x_preprocessed_df, x_conv_df):
         pathlib.Path('plots/test2').mkdir(parents=True, exist_ok=True)
         # save the file
         x_df = pd.concat([x_initial_df, x_preprocessed_df, x_conv_df], axis=1)
-        x_df.to_csv(path_or_buf='{}/{}'.format(test_path, file_name))
+        x_df.to_csv(path_or_buf='{}'.format(os.path.join(test_path, file_name)))
 
 
 def update(t, lines, skeletons_display, ax, seq_length):
@@ -62,8 +63,7 @@ def main(file_name, preprocessed):
         [20, 21]
     ])
 
-    image_name = file_name
-    image_path = '{}/{}'.format(test_path, image_name)
+    image_path = '{}'.format(os.path.join(test_path, file_name))
 
     # ---------
     # Get graph data
@@ -119,9 +119,9 @@ def main(file_name, preprocessed):
 
     # Initial skeleton
     ax = fig.add_subplot(111, projection='3d')
-    ax.set_xlim3d([-1, 1])
-    ax.set_ylim3d([-1, 1])
-    ax.set_zlim3d([-1, 1])
+    ax.set_xlim3d([skeletons_display[:, 0, :, :].min(), skeletons_display[:, 0, :, :].max()])
+    ax.set_ylim3d([skeletons_display[:, 1, :, :].min(), skeletons_display[:, 1, :, :].max()])
+    ax.set_zlim3d([skeletons_display[:, 2, :, :].min(), skeletons_display[:, 2, :, :].max()])
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
@@ -146,3 +146,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(file_name=args.file, preprocessed=args.preprocessed)
+
+# if __name__ == '__main__':
+#     import torch
+#     import pandas
+#
+#     # load sample data
+#     aswe = torch.load('/home/gu/Documents/onlinedhg/ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata')
+#     idx = 88
+#     fn = '/tmp/gesture_{}_tmp.csv'.format(idx)
+#     pandas.DataFrame(data=aswe[idx].numpy()).to_csv(fn)
+#
+#     # plot it
+#     main(file_name=fn, preprocessed=False)
