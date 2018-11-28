@@ -287,3 +287,87 @@ def get_param_keys(params):
         params_keys = []
 
     return list(params_keys)
+
+
+# Loading and pre-processing for Online DHG dataset -------------
+
+def load_dataset_in_torch(use_online_dataset=False, use_14=True, return_both_14_and_28=False, articulations='world',
+                          segment_sequences=False, path_dataset='./data/'):
+    """
+    Return format
+    -------------
+
+    Type:
+      torch.Tensor
+
+    Shape:
+      Default: (x, y)
+      if return_both_14_and_28, return: (x, y14, y28)
+      if segment_sequences, return: (x, y, start_end_frames)
+      if return_both_14_and_28 and segment_sequences, return: (x, y14, y28, start_end_frames)
+    """
+
+    # standard dhg
+    if use_online_dataset is False:
+
+        all_labels_14 = torch.load(os.path.join(path_dataset, 'STANDARD_DHG__all_labels_14.pytorchdata'))
+        all_labels_28 = torch.load(os.path.join(path_dataset, 'STANDARD_DHG__all_labels_28.pytorchdata'))
+
+        if articulations == 'image':
+            x_dataset = torch.load(os.path.join(path_dataset, 'STANDARD_DHG__all_skeletons_image.pytorchdata'))
+        elif articulations == 'world':
+            x_dataset = torch.load(os.path.join(path_dataset, 'STANDARD_DHG__all_skeletons_world.pytorchdata'))
+        else:
+            raise Exception('The dataset you asked for does not exist.')
+
+        if use_14:
+            y_dataset = all_labels_14
+        else:
+            y_dataset = all_labels_28
+
+        if return_both_14_and_28:
+            return x_dataset, all_labels_14, all_labels_28
+        else:
+            return x_dataset, y_dataset
+
+    # online dhg
+    if use_online_dataset is True:
+
+        all_labels_14 = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_labels_14.pytorchdata'))
+        all_labels_28 = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_labels_28.pytorchdata'))
+
+        all_start_end_frames = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_start_end_frames.pytorchdata'))
+
+        if articulations == 'simple' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons.pytorchdata'))
+        if articulations == 'image' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image.pytorchdata'))
+        if articulations == 'world' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world.pytorchdata'))
+        elif articulations == 'world_enhanced' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata'))
+        if articulations == 'simple' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons.pytorchdata'))
+        if articulations == 'image' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image.pytorchdata'))
+        if articulations == 'world' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world.pytorchdata'))
+        elif articulations == 'world_enhanced' and not segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata'))
+        else:
+            raise Exception('The dataset you asked for does not exist.')
+
+        if use_14:
+            y_dataset = all_labels_14
+        else:
+            y_dataset = all_labels_28
+
+        if return_both_14_and_28 and not segment_sequences:
+            return x_dataset, all_labels_14, all_labels_28
+        elif not return_both_14_and_28 and not segment_sequences:
+            return x_dataset, y_dataset
+
+        elif return_both_14_and_28 and segment_sequences:
+            return x_dataset, all_labels_14, all_labels_28, all_start_end_frames
+        else:
+            return x_dataset, y_dataset, all_start_end_frames
