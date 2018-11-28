@@ -347,14 +347,14 @@ def load_dataset_in_torch(use_online_dataset=False, use_14=True, return_both_14_
             x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world.pytorchdata'))
         elif articulations == 'world_enhanced' and not segment_sequences:
             x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata'))
-        if articulations == 'simple' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons.pytorchdata'))
-        if articulations == 'image' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image.pytorchdata'))
-        if articulations == 'world' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world.pytorchdata'))
-        elif articulations == 'world_enhanced' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata'))
+        if articulations == 'simple' and segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_segmented.pytorchdata'))
+        if articulations == 'image' and segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image_segmented.pytorchdata'))
+        if articulations == 'world' and segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_segmented.pytorchdata'))
+        elif articulations == 'world_enhanced' and segment_sequences:
+            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced_segmented.pytorchdata'))
         else:
             raise Exception('The dataset you asked for does not exist.')
 
