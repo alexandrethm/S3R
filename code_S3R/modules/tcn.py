@@ -1,6 +1,8 @@
 import torch.nn as nn
 from torch.nn.utils import weight_norm
 
+from code_S3R.modules.attention import DotAttention, GeneralSelfAttention, TransposeAxesOneAndTwo
+
 
 class TemporalConvNet(nn.Module):
     """
@@ -21,7 +23,7 @@ class TemporalConvNet(nn.Module):
         dropout (float):
     """
 
-    def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, dropout):
+    def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, dropout, temporal_attention):
         super(TemporalConvNet, self).__init__()
         self.num_channels = num_channels
         layers = []
@@ -33,6 +35,10 @@ class TemporalConvNet(nn.Module):
             layers += [TemporalBlock(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size,
                                      padding=(kernel_size - 1) * dilation_size, activation_fct=activation_fct,
                                      dropout=dropout, groups=groups[i])]
+            if temporal_attention == 'dot_attention':
+                layers += [TransposeAxesOneAndTwo(), DotAttention(), TransposeAxesOneAndTwo()]
+            elif temporal_attention == 'general_attention':
+                layers += [TransposeAxesOneAndTwo(), GeneralSelfAttention(C=out_channels), TransposeAxesOneAndTwo()]
 
         self.network = nn.Sequential(*layers)
 
