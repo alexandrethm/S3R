@@ -1,4 +1,5 @@
 import os
+import os.path
 import pathlib
 from datetime import datetime
 
@@ -371,3 +372,142 @@ def load_dataset_in_torch(use_online_dataset=False, use_14=True, return_both_14_
             return x_dataset, all_labels_14, all_labels_28, all_start_end_frames
         else:
             return x_dataset, y_dataset, all_start_end_frames
+
+
+# (One-shot code) Used to load DHG / Online DHG from txt files and transform it to lists/Tensors -------------
+def file_to_numpy(path):
+    if os.path.exists(path):
+        return numpy.array([s.replace('\n', '').split() for s in open(path, 'r').readlines()], dtype=numpy.float32)
+    else:
+        return None
+
+
+def quicker_load_for_standard_dhg_dataset(root='/tmp/DHG2016dataset', root_out='./data/'):
+    """
+    Standard DHG dataset
+    """
+    """
+    Standard DHG dataset
+    """
+    import os
+    import numpy
+    import torch
+
+    n_gestures = 14
+    n_fingers = 2
+    n_subjects = 28
+    n_essais = 5
+
+    all_skeletons_image = []
+    all_skeletons_world = []
+    all_labels_14 = []
+    all_labels_28 = []
+
+    for gesture in range(1, n_gestures + 1):
+
+        print('==> Gesture {}'.format(gesture))
+
+        for finger in range(1, n_fingers + 1):
+            for subject in range(1, n_subjects + 1):
+                for essai in range(1, n_essais + 1):
+
+                    skeletons_image = file_to_numpy(
+                        root + '/gesture_{}/finger_{}/subject_{}/essai_{}/skeletons_image.txt'.format(gesture, finger,
+                                                                                                      subject, essai))
+                    skeletons_world = file_to_numpy(
+                        root + '/gesture_{}/finger_{}/subject_{}/essai_{}/skeletons_world.txt'.format(gesture, finger,
+                                                                                                      subject, essai))
+
+                    if skeletons_world is not None:
+                        skeletons_image = torch.from_numpy(skeletons_image)
+                        skeletons_world = torch.from_numpy(skeletons_world)
+                        all_skeletons_image.append(skeletons_image)
+                        all_skeletons_world.append(skeletons_world)
+                        all_labels_14.append(gesture)
+                        all_labels_28.append(2 * gesture)
+
+    print('Saving to disk...')
+    torch.save(all_skeletons_image, root_out + '/STANDARD_DHG__all_skeletons_image.pytorchdata')
+    torch.save(all_skeletons_world, root_out + '/STANDARD_DHG__all_skeletons_world.pytorchdata')
+    torch.save(all_labels_14, root_out + '/STANDARD_DHG__all_labels_14.pytorchdata')
+    torch.save(all_labels_28, root_out + '/STANDARD_DHG__all_labels_28.pytorchdata')
+    print('Saved to disk.')
+
+
+def quicker_load_for_online_dhg_dataset(root='/tmp/ODHG2016dataset', root_out='./data/'):
+    """
+    Online DHG dataset
+    """
+    n_subjects = 28
+    n_seq_records = 14
+    n_gestures_by_unsegmented_sequence = 10
+
+    all_skeletons = []
+    all_skeletons_image = []
+    all_skeletons_world = []
+    all_skeletons_world_enhanced = []
+    all_skeletons_segmented = []
+    all_skeletons_image_segmented = []
+    all_skeletons_world_segmented = []
+    all_skeletons_world_enhanced_segmented = []
+    all_labels_14 = []
+    all_labels_28 = []
+    all_start_end_frames = []
+
+    for subject in range(1, n_subjects + 1):
+
+        print('==> Subject {}'.format(subject))
+
+        for sequence in range(1, n_seq_records + 1):
+
+            skeletons = file_to_numpy(root + '/subject_{}/sequence_{}/skeletons.txt'.format(subject, sequence))
+            skeletons_image = file_to_numpy(
+                root + '/subject_{}/sequence_{}/skeletons_image.txt'.format(subject, sequence))
+            skeletons_world = file_to_numpy(
+                root + '/subject_{}/sequence_{}/skeletons_world.txt'.format(subject, sequence))
+            skeletons_world_enhanced = file_to_numpy(
+                root + '/subject_{}/sequence_{}/skeletons_world_enhanced.txt'.format(subject, sequence))
+            if skeletons_world is not None:
+                skeletons = torch.from_numpy(skeletons)
+                skeletons_image = torch.from_numpy(skeletons_image)
+                skeletons_world = torch.from_numpy(skeletons_world)
+                skeletons_world_enhanced = torch.from_numpy(skeletons_world_enhanced)
+                all_skeletons.append(skeletons)
+                all_skeletons_image.append(skeletons_image)
+                all_skeletons_world.append(skeletons_world)
+                all_skeletons_world_enhanced.append(skeletons_world_enhanced)
+
+        infos_sequences_subject = [s.replace('\n', '').split() for s in
+                                   open(root + '/subject_{}_infos_sequences.txt'.format(subject), 'r').readlines()]
+        for i in range(int(len(infos_sequences_subject) / 3)):
+            info_seq_i = infos_sequences_subject[3 * i:3 * (i + 1)]
+            for g in range(len(info_seq_i[0])):
+                all_labels_14.append(int(info_seq_i[0][g]))
+                all_labels_28.append(int(info_seq_i[0][g]) * int(info_seq_i[1][g]))
+                all_start_end_frames.append((int(info_seq_i[2][2 * g]), int(info_seq_i[2][2 * g + 1])))
+
+    all_start_end_frames_by_seq = [all_start_end_frames[unsegmented_sequence * n_gestures_by_unsegmented_sequence:(
+                                                                                                                          unsegmented_sequence + 1) * n_gestures_by_unsegmented_sequence]
+                                   for unsegmented_sequence
+                                   in range(int(len(all_start_end_frames) / n_gestures_by_unsegmented_sequence))]
+    for i in range(len(all_skeletons_world)):
+        for start_end in all_start_end_frames_by_seq[i]:
+            all_skeletons_segmented.append(all_skeletons[i][start_end[0]:start_end[1]])
+            all_skeletons_image_segmented.append(all_skeletons_image[i][start_end[0]:start_end[1]])
+            all_skeletons_world_segmented.append(all_skeletons_world[i][start_end[0]:start_end[1]])
+            all_skeletons_world_enhanced_segmented.append(all_skeletons_world_enhanced[i][start_end[0]:start_end[1]])
+
+    print('Saving to disk...')
+    torch.save(all_skeletons, root_out + '/ONLINE_DHG__all_skeletons.pytorchdata')
+    torch.save(all_skeletons_image, root_out + '/ONLINE_DHG__all_skeletons_image.pytorchdata')
+    torch.save(all_skeletons_world, root_out + '/ONLINE_DHG__all_skeletons_world.pytorchdata')
+    torch.save(all_skeletons_world_enhanced, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata')
+    torch.save(all_skeletons_segmented, root_out + '/ONLINE_DHG__all_skeletons_segmented.pytorchdata')
+    torch.save(all_skeletons_image_segmented, root_out + '/ONLINE_DHG__all_skeletons_image_segmented.pytorchdata')
+    torch.save(all_skeletons_world_segmented, root_out + '/ONLINE_DHG__all_skeletons_world_segmented.pytorchdata')
+    torch.save(all_skeletons_world_enhanced_segmented,
+               root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_segmented.pytorchdata')
+    torch.save(all_labels_14, root_out + '/ONLINE_DHG__all_labels_14.pytorchdata')
+    torch.save(all_labels_28, root_out + '/ONLINE_DHG__all_labels_28.pytorchdata')
+    torch.save(all_start_end_frames, root_out + '/ONLINE_DHG__all_start_end_frames.pytorchdata')
+    print('Saved to disk.')
