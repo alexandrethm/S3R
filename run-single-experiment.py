@@ -5,7 +5,7 @@ import comet_ml
 import torch
 from scipy import stats
 from sklearn.model_selection import *
-from skorch import NeuralNetClassifier, callbacks
+from skorch import NeuralNetClassifier, callbacks, dataset
 
 from code_S3R import my_nets
 import code_S3R.my_utils.other_utils as utils
@@ -58,33 +58,36 @@ y_test = y_test_14
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # unique identifier for the grid_search / random_search run
-search_run_id = 'grid_search_{:%m%d_%H%M}'.format(datetime.now())
+single_run_id = 'single_run_{:%m%d_%H%M}'.format(datetime.now())
 
 net = NeuralNetClassifier(
     module=my_nets.Net,
     max_epochs=2000, batch_size=64,
     lr=0.0001,
-    module__preprocess='graph_conv',  # or None
-    module__conv_type='temporal',
-    module__channel_list=[(66, None), (66, 1)],
-    # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
-    # [(66, None), (66, 33), (66, 11)],
-    # [(66, None), (66, 66), (66, 11)],
-    # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
-    # [(66,33), (66,11)],
-    module__fc_hidden_layers=[1936, 128],
+    module__preprocess=None,  # or None
+    module__conv_type='regular',
+    module__channel_list=[(132, 11), (22, 11)],
+    module__fc_hidden_layers=[1400, 42],
     module__activation_fct='prelu',
     module__dropout=0.4,
+    module__temporal_attention=None,
 
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
         ('my_cb', utils.MyCallback(param_keys_to_log=utils.get_param_keys(hyper_params),
-                                   search_run_id=search_run_id,
-                                   log_to_comet_ml=False, log_to_csv=True)),
+                                   search_run_id=single_run_id,
+                                   log_to_comet_ml=False, log_to_csv=False)),
         ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
-    device=device
+    device=device,
 )
 
 net.fit(x_train, y_train_14)
+
+
+# To check accuracy with the the test dataset
+# y_proba = net.predict_proba(x_test)
+# y_predict = net.predict(x_test)
+# test_accuracy = np.mean(y_predict == y_test_14)
+# print('Test accuracy : {}'.format(test_accuracy))

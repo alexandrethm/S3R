@@ -9,7 +9,7 @@ from bokeh.models import ColumnDataSource, Select
 from bokeh.models import TableColumn, DataTable
 from bokeh.plotting import figure
 
-grid_search_path = 'results/grid_search_1121_2058'
+grid_search_path = 'results/grid_search_1122_1128'
 
 # output_file("test.html", title="Test")
 
