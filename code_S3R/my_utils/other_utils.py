@@ -450,9 +450,11 @@ def quicker_load_for_online_dhg_dataset(root='/tmp/ODHG2016dataset', root_out='.
     all_skeletons_image_segmented = []
     all_skeletons_world_segmented = []
     all_skeletons_world_enhanced_segmented = []
+    tmp_labels_14 = []
+    tmp_labels_28 = []
     all_labels_14 = []
     all_labels_28 = []
-    all_start_end_frames = []
+    cut_indexes = []
 
     for subject in range(1, n_subjects + 1):
 
@@ -477,25 +479,59 @@ def quicker_load_for_online_dhg_dataset(root='/tmp/ODHG2016dataset', root_out='.
                 all_skeletons_world.append(skeletons_world)
                 all_skeletons_world_enhanced.append(skeletons_world_enhanced)
 
+    for subject in range(1, n_subjects + 1):
+        infos_sequences_subject = [s.replace('\n', '').split() for s in
+                                   open(root + '/subject_{}_infos_sequences.txt'.format(subject), 'r').readlines()]
+        start_ends_subject = numpy.array(infos_sequences_subject[2::3])
+        cut_indexes.append(start_ends_subject)
+    cut_indexes = numpy.vstack([a for a in cut_indexes])
+    first_col = numpy.array([0 for a in all_skeletons_world]).T[:, numpy.newaxis]
+    last_col = numpy.array([len(a) for a in all_skeletons_world]).T[:, numpy.newaxis] - 1
+    cut_indexes = numpy.hstack([first_col, cut_indexes, last_col])
+    cut_indexes = cut_indexes.tolist()
+    for ase_idx in range(len(cut_indexes)):
+        if int(cut_indexes[ase_idx][len(cut_indexes[ase_idx]) - 1]) == int(
+                cut_indexes[ase_idx][len(cut_indexes[ase_idx]) - 2]):
+            cut_indexes[ase_idx].pop()
+
+    def cut_array(arr, cuts_list):
+        all_cuts = []
+        for cut_start, cut_end in zip(cuts_list, cuts_list[1:]):
+            all_cuts.append(arr[int(cut_start):int(cut_end)])
+        return all_cuts
+
+    def quick_flatten(arr):
+        return [item for sublist in arr for item in sublist]
+
+    all_skeletons_segmented = quick_flatten(
+        [cut_array(all_skeletons[i], cut_indexes[i]) for i in range(len(cut_indexes))])
+    all_skeletons_image_segmented = quick_flatten(
+        [cut_array(all_skeletons_image[i], cut_indexes[i]) for i in range(len(cut_indexes))])
+    all_skeletons_world_segmented = quick_flatten(
+        [cut_array(all_skeletons_world[i], cut_indexes[i]) for i in range(len(cut_indexes))])
+    all_skeletons_world_enhanced_segmented = quick_flatten(
+        [cut_array(all_skeletons_world_enhanced[i], cut_indexes[i]) for i in range(len(cut_indexes))])
+
+    for subject in range(1, n_subjects + 1):
         infos_sequences_subject = [s.replace('\n', '').split() for s in
                                    open(root + '/subject_{}_infos_sequences.txt'.format(subject), 'r').readlines()]
         for i in range(int(len(infos_sequences_subject) / 3)):
             info_seq_i = infos_sequences_subject[3 * i:3 * (i + 1)]
             for g in range(len(info_seq_i[0])):
-                all_labels_14.append(int(info_seq_i[0][g]))
-                all_labels_28.append(int(info_seq_i[0][g]) * int(info_seq_i[1][g]))
-                all_start_end_frames.append((int(info_seq_i[2][2 * g]), int(info_seq_i[2][2 * g + 1])))
+                tmp_labels_14.append(int(info_seq_i[0][g]))
+                tmp_labels_28.append(int(info_seq_i[0][g]) * int(info_seq_i[1][g]))
 
-    all_start_end_frames_by_seq = [all_start_end_frames[unsegmented_sequence * n_gestures_by_unsegmented_sequence:(
-                                                                                                                          unsegmented_sequence + 1) * n_gestures_by_unsegmented_sequence]
-                                   for unsegmented_sequence
-                                   in range(int(len(all_start_end_frames) / n_gestures_by_unsegmented_sequence))]
-    for i in range(len(all_skeletons_world)):
-        for start_end in all_start_end_frames_by_seq[i]:
-            all_skeletons_segmented.append(all_skeletons[i][start_end[0]:start_end[1]])
-            all_skeletons_image_segmented.append(all_skeletons_image[i][start_end[0]:start_end[1]])
-            all_skeletons_world_segmented.append(all_skeletons_world[i][start_end[0]:start_end[1]])
-            all_skeletons_world_enhanced_segmented.append(all_skeletons_world_enhanced[i][start_end[0]:start_end[1]])
+    tmp_labels_14 = [tmp_labels_14[i * 10:(i + 1) * 10] for i in range(int(len(tmp_labels_14) / 10))]
+    tmp_labels_28 = [tmp_labels_28[i * 10:(i + 1) * 10] for i in range(int(len(tmp_labels_28) / 10))]
+
+    for l in range(len(cut_indexes)):
+        for i in range(len(cut_indexes[l]) - 1):
+            if i % 2 == 0:
+                all_labels_14.append(0)
+                all_labels_28.append(0)
+            else:
+                all_labels_14.append(tmp_labels_14[l][int((i - 1) / 2)])
+                all_labels_28.append(tmp_labels_28[l][int((i - 1) / 2)])
 
     print('Saving to disk...')
     torch.save(all_skeletons, root_out + '/ONLINE_DHG__all_skeletons.pytorchdata')
@@ -509,5 +545,5 @@ def quicker_load_for_online_dhg_dataset(root='/tmp/ODHG2016dataset', root_out='.
                root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_segmented.pytorchdata')
     torch.save(all_labels_14, root_out + '/ONLINE_DHG__all_labels_14.pytorchdata')
     torch.save(all_labels_28, root_out + '/ONLINE_DHG__all_labels_28.pytorchdata')
-    torch.save(all_start_end_frames, root_out + '/ONLINE_DHG__all_start_end_frames.pytorchdata')
+    torch.save(cut_indexes, root_out + '/ONLINE_DHG__all_start_end_frames.pytorchdata')
     print('Saved to disk.')
