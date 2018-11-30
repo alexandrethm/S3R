@@ -379,6 +379,22 @@ def load_dataset_in_torch(use_online_dataset, use_14=True, return_both_14_and_28
             return x_dataset, y_dataset
 
 
+def load_unsequenced_test_dataset(path_dataset='./data/', enhanced=False):
+    """
+
+    Args:
+        path_dataset:
+        enhanced:
+
+    Returns:
+        The list of unsliced test sequences
+
+    """
+    data_type = '_enhanced' if enhanced else ''
+    return torch.load(
+        os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world{}_unsliced_test.pytorchdata'.format(data_type)))
+
+
 # (One-shot code) Used to load DHG / Online DHG from txt files and transform it to lists/Tensors -------------
 def file_to_numpy(path):
     if os.path.exists(path):
@@ -447,8 +463,9 @@ def get_seq_x(root, subject, sequence):
         subject:
         sequence:
 
-    Returns: Torch tensors skeletons, skeletons_image, skeletons_world, skeletons_world_enhanced for the specified
-    sequence and subject
+    Returns:
+        Torch tensors skeletons, skeletons_image, skeletons_world, skeletons_world_enhanced for the specified
+        sequence and subject
 
     """
     skeletons = file_to_numpy(root + '/subject_{}/sequence_{}/skeletons.txt'.format(subject, sequence + 1))
@@ -474,7 +491,8 @@ def get_seq_y(gestures, fingers, time_bounds, seq_length):
         fingers:
         time_bounds:
 
-    Returns: Y labels for the whole sequence (with one Y label for each time step)
+    Returns:
+        Y labels for the whole sequence (with one Y label for each time step)
 
     """
     # Generate full Y data for the sequence
@@ -523,7 +541,8 @@ def slice_sequence(full_ske, full_ske_im, full_x, full_x_enhanced, full_y_14, fu
         time_window:
         time_gap:
 
-    Returns: The list of x and y data for the sequence
+    Returns:
+        The list of x and y data for the sequence
 
     """
     ske_list = []
@@ -600,6 +619,10 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     all_x_enhanced_test = []
     all_y_14_test = []
     all_y_28_test = []
+
+    # For visualizing real time recognition
+    all_x_unsliced_test = []
+    all_x_enhanced_unsliced_test = []
 
     for subject in range(1, n_subjects + 1):
 
@@ -685,6 +708,9 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
             all_x_enhanced_test += x_enhanced_list
             all_y_14_test += y_list_14
             all_y_28_test += y_list_28
+
+            all_x_unsliced_test += x_seq_list
+            all_x_enhanced_unsliced_test += x_enhanced_seq_list
         else:
             all_ske_train += ske_list
             all_ske_im_train += ske_im_list
@@ -723,7 +749,6 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     all_y_14_test = torch.stack(all_y_14_test)
     all_y_28_test = torch.stack(all_y_28_test)
 
-
     # Save to disk
     print('Saving to disk...')
     # create the directory if does not exist, without raising an error if it does already exist
@@ -744,4 +769,7 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     torch.save(all_x_enhanced_test, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_test.pytorchdata')
     torch.save(all_y_14_test, root_out + '/ONLINE_DHG__all_labels_14_test.pytorchdata')
     torch.save(all_y_28_test, root_out + '/ONLINE_DHG__all_labels_28_test.pytorchdata')
+    torch.save(all_x_unsliced_test, root_out + '/ONLINE_DHG__all_skeletons_world_unsliced_test.pytorchdata')
+    torch.save(all_x_enhanced_unsliced_test,
+               root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_unsliced_test.pytorchdata')
     print('Saved to disk.')
