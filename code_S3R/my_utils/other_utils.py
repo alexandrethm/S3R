@@ -193,7 +193,8 @@ def load_data(filepath='./data/data.numpy.npy'):
     Returns hand gesture sequences (X) and their associated labels (Y).
     Each sequence has two different labels.
     The first label Y describes the gesture class out of 14 possible gestures (e.g. swiping your hand to the right).
-    The second label Y describes the gesture class out of 28 possible gestures (e.g. swiping your hand to the right with your index pointed, or not pointed).
+    The second label Y describes the gesture class out of 28 possible gestures (e.g. swiping your hand to the right with
+     your index pointed, or not pointed).
     """
     data = numpy.load(filepath, encoding='latin1')
     # data = [x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28]
@@ -292,11 +293,22 @@ def get_param_keys(params):
 
 # Loading and pre-processing for Online DHG dataset -------------
 
-def load_dataset_in_torch(use_online_dataset=False, use_14=True, return_both_14_and_28=False, articulations='world',
-                          segment_sequences=False, path_dataset='./data/'):
+def load_dataset_in_torch(use_online_dataset, use_14=True, return_both_14_and_28=False, train_dataset=True,
+                          articulations='world', path_dataset='./data/'):
     """
+
+    Args:
+        use_online_dataset (bool):
+        use_14 (bool):
+        return_both_14_and_28 (bool):
+        train_dataset (bool): If True, return the train dataset, else return the test dataset
+        articulations (str): 'world', 'world_enhanced' (or 'simple' or 'image' ?) for online dataset.
+          'world' (or 'image' ?) for standard dataset.
+        path_dataset:
+
+
     Return format
-    -------------
+    -----
 
     Type:
       torch.Tensor
@@ -333,28 +345,26 @@ def load_dataset_in_torch(use_online_dataset=False, use_14=True, return_both_14_
 
     # online dhg
     if use_online_dataset is True:
+        dataset_type = 'train' if train_dataset else 'test'
 
-        all_labels_14 = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_labels_14.pytorchdata'))
-        all_labels_28 = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_labels_28.pytorchdata'))
+        all_labels_14 = torch.load(
+            os.path.join(path_dataset, 'ONLINE_DHG__all_labels_14_{}.pytorchdata'.format(dataset_type)))
+        all_labels_28 = torch.load(
+            os.path.join(path_dataset, 'ONLINE_DHG__all_labels_28_{}.pytorchdata'.format(dataset_type)))
 
-        all_start_end_frames = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_start_end_frames.pytorchdata'))
-
-        if articulations == 'simple' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons.pytorchdata'))
-        elif articulations == 'image' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image.pytorchdata'))
-        elif articulations == 'world' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world.pytorchdata'))
-        elif articulations == 'world_enhanced' and not segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata'))
-        elif articulations == 'simple' and segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_segmented.pytorchdata'))
-        elif articulations == 'image' and segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image_segmented.pytorchdata'))
-        elif articulations == 'world' and segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_segmented.pytorchdata'))
-        elif articulations == 'world_enhanced' and segment_sequences:
-            x_dataset = torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_enhanced_segmented.pytorchdata'))
+        if articulations == 'simple':
+            x_dataset = torch.load(
+                os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_{}.pytorchdata'.format(dataset_type)))
+        elif articulations == 'image':
+            x_dataset = torch.load(
+                os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_image_{}.pytorchdata'.format(dataset_type)))
+        elif articulations == 'world':
+            x_dataset = torch.load(
+                os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world_{}.pytorchdata'.format(dataset_type)))
+        elif articulations == 'world_enhanced':
+            x_dataset = torch.load(
+                os.path.join(path_dataset,
+                             'ONLINE_DHG__all_skeletons_world_enhanced_{}.pytorchdata'.format(dataset_type)))
         else:
             raise Exception('The dataset you asked for does not exist.')
 
@@ -363,15 +373,10 @@ def load_dataset_in_torch(use_online_dataset=False, use_14=True, return_both_14_
         else:
             y_dataset = all_labels_28
 
-        if return_both_14_and_28 and not segment_sequences:
+        if return_both_14_and_28:
             return x_dataset, all_labels_14, all_labels_28
-        elif not return_both_14_and_28 and not segment_sequences:
-            return x_dataset, y_dataset
-
-        elif return_both_14_and_28 and segment_sequences:
-            return x_dataset, all_labels_14, all_labels_28, all_start_end_frames
         else:
-            return x_dataset, y_dataset, all_start_end_frames
+            return x_dataset, y_dataset
 
 
 # (One-shot code) Used to load DHG / Online DHG from txt files and transform it to lists/Tensors -------------
@@ -434,116 +439,309 @@ def quicker_load_for_standard_dhg_dataset(root='/tmp/DHG2016dataset', root_out='
     print('Saved to disk.')
 
 
-def quicker_load_for_online_dhg_dataset(root='/tmp/ODHG2016dataset', root_out='./data/'):
+def get_seq_x(root, subject, sequence):
     """
-    Online DHG dataset
+
+    Args:
+        root: Path of the root folder containing online dhg data
+        subject:
+        sequence:
+
+    Returns: Torch tensors skeletons, skeletons_image, skeletons_world, skeletons_world_enhanced for the specified
+    sequence and subject
+
+    """
+    skeletons = file_to_numpy(root + '/subject_{}/sequence_{}/skeletons.txt'.format(subject, sequence + 1))
+    skeletons_image = file_to_numpy(root + '/subject_{}/sequence_{}/skeletons_image.txt'.format(subject, sequence + 1))
+    skeletons_world = file_to_numpy(root + '/subject_{}/sequence_{}/skeletons_world.txt'.format(subject, sequence + 1))
+    skeletons_world_enhanced = file_to_numpy(
+        root + '/subject_{}/sequence_{}/skeletons_world_enhanced.txt'.format(subject, sequence + 1))
+
+    skeletons = torch.from_numpy(skeletons)
+    skeletons_image = torch.from_numpy(skeletons_image)
+    skeletons_world = torch.from_numpy(skeletons_world)
+    skeletons_world_enhanced = torch.from_numpy(skeletons_world_enhanced)
+
+    return skeletons, skeletons_image, skeletons_world, skeletons_world_enhanced
+
+
+def get_seq_y(gestures, fingers, time_bounds, seq_length):
+    """
+
+    Args:
+        seq_length:
+        gestures:
+        fingers:
+        time_bounds:
+
+    Returns: Y labels for the whole sequence (with one Y label for each time step)
+
+    """
+    # Generate full Y data for the sequence
+    assert len(gestures) == len(fingers) and 2 * len(gestures) == len(time_bounds)
+    nb_gestures = len(gestures)
+
+    y_seq_14 = torch.zeros(seq_length, 14 + 1, dtype=torch.int)  # +1 for the "no gesture" class
+    y_seq_28 = torch.zeros(seq_length, 28 + 1, dtype=torch.int)
+
+    # Labelize the 'real gestures' classes
+    for g in range(nb_gestures):
+        gesture = int(gestures[g])
+        finger = int(fingers[g])
+        t_start = int(time_bounds[2 * g])
+        t_end = int(time_bounds[2 * g + 1])
+
+        # Gestures classes go from 1 to 14, so we keep index 0 for the 'no gesture' class
+        y_seq_14[t_start:t_end, gesture] = 1
+        # Class is defined as follows : 2*k-1 for (finger=1, gesture=k) and class 2*k for (finger=2, gesture=k)
+        # We go from index 1 (finger=1, gesture=1) to index 28 (finger=2, gesture=14)
+        # and index 0 is kept for the 'no gesture class'
+        y_seq_28[t_start:t_end, 2 * gesture + finger - 2] = 1
+
+    # Labelize the 'no gesture' class
+    for t in range(seq_length):
+        # if there is no gesture at timestep t, add a 'no gesture' label
+        if y_seq_14[t].sum().item() == 0:
+            y_seq_14[t, 0] = 1
+            y_seq_28[t, 0] = 1
+
+    return y_seq_14, y_seq_28
+
+
+def slice_sequence(full_ske, full_ske_im, full_x, full_x_enhanced, full_y_14, full_y_28, time_window, time_gap):
+    """
+
+    Slice a sequence of gestures performed by a subject into multiple windows of x/y data
+
+    Args:
+        full_ske:
+        full_ske_im:
+        full_x:
+        full_x_enhanced:
+        full_y_14:
+        full_y_28:
+        time_window:
+        time_gap:
+
+    Returns: The list of x and y data for the sequence
+
+    """
+    ske_list = []
+    ske_im_list = []
+    x_list = []
+    x_enhanced_list = []
+    y_list_14 = []
+    y_list_28 = []
+
+    assert full_x.shape[0] == full_x_enhanced.shape[0] \
+           and full_x.shape[0] == full_ske.shape[0] \
+           and full_x.shape[0] == full_ske_im.shape[0] \
+           and full_x.shape[0] == full_y_14.shape[0] \
+           and full_x.shape[0] == full_y_28.shape[0]
+    seq_length, _ = full_x.shape
+
+    # Slice the full sequences in multiple tensors of temporal duration 'time_window',
+    # with 'time_gap' between the sequences
+    t_a = 0
+    t_b = t_a + time_window
+    while t_b <= seq_length:
+        # Take a slice of x from t_a (included) to t_b (excluded)
+        ske = full_ske[t_a:t_b, :]
+        ske_im = full_ske_im[t_a:t_b, :]
+        x = full_x[t_a:t_b, :]
+        x_enhanced = full_x_enhanced[t_a:t_b, :]
+
+        # Define y for the slice as full_y[t_b - 1] : the networks's goal is to identify, in real time,
+        # the gestures at time t given the preceding time steps
+        y_14 = full_y_14[t_b - 1, :]
+        y_28 = full_y_28[t_b - 1, :]
+
+        # Add the new x/y to the list
+        ske_list.append(ske)
+        ske_im_list.append(ske_im)
+        x_list.append(x)
+        x_enhanced_list.append(x_enhanced)
+        y_list_14.append(y_14)
+        y_list_28.append(y_28)
+
+        # Shift the time window
+        t_a += time_gap
+        t_b += time_gap
+
+    return ske_list, ske_im_list, x_list, x_enhanced_list, y_list_14, y_list_28
+
+
+def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
+                            root_out='/Users/alexandre/Desktop/ODHG_torch_data', time_window=100, time_gap=10):
+    """
+
+    Load .txt files and save to disk x and y data, as torch tensors.
+
+    Args:
+        root:
+        root_out:
+        time_window:
+        time_gap:
+
     """
     n_subjects = 28
-    n_seq_records = 14
-    n_gestures_by_unsegmented_sequence = 10
+    test_subjects_id = [0, 2, 3, 7, 12, 20, 21, 22]
 
-    all_skeletons = []
-    all_skeletons_image = []
-    all_skeletons_world = []
-    all_skeletons_world_enhanced = []
-    all_skeletons_segmented = []
-    all_skeletons_image_segmented = []
-    all_skeletons_world_segmented = []
-    all_skeletons_world_enhanced_segmented = []
-    tmp_labels_14 = []
-    tmp_labels_28 = []
-    all_labels_14 = []
-    all_labels_28 = []
-    cut_indexes = []
+    all_ske_train = []
+    all_ske_im_train = []
+    all_x_train = []
+    all_x_enhanced_train = []
+    all_y_14_train = []
+    all_y_28_train = []
+
+    all_ske_test = []
+    all_ske_im_test = []
+    all_x_test = []
+    all_x_enhanced_test = []
+    all_y_14_test = []
+    all_y_28_test = []
 
     for subject in range(1, n_subjects + 1):
 
         print('==> Subject {}'.format(subject))
 
-        for sequence in range(1, n_seq_records + 1):
+        # --------
 
-            skeletons = file_to_numpy(root + '/subject_{}/sequence_{}/skeletons.txt'.format(subject, sequence))
-            skeletons_image = file_to_numpy(
-                root + '/subject_{}/sequence_{}/skeletons_image.txt'.format(subject, sequence))
-            skeletons_world = file_to_numpy(
-                root + '/subject_{}/sequence_{}/skeletons_world.txt'.format(subject, sequence))
-            skeletons_world_enhanced = file_to_numpy(
-                root + '/subject_{}/sequence_{}/skeletons_world_enhanced.txt'.format(subject, sequence))
-            if skeletons_world is not None:
-                skeletons = torch.from_numpy(skeletons)
-                skeletons_image = torch.from_numpy(skeletons_image)
-                skeletons_world = torch.from_numpy(skeletons_world)
-                skeletons_world_enhanced = torch.from_numpy(skeletons_world_enhanced)
-                all_skeletons.append(skeletons)
-                all_skeletons_image.append(skeletons_image)
-                all_skeletons_world.append(skeletons_world)
-                all_skeletons_world_enhanced.append(skeletons_world_enhanced)
+        print('Load and create X/Y for each sequence...')
+        subject_info_seq = [s.split() for s in
+                            open(root + '/subject_{}_infos_sequences.txt'.format(subject), 'r').readlines()]
 
-    for subject in range(1, n_subjects + 1):
-        infos_sequences_subject = [s.replace('\n', '').split() for s in
-                                   open(root + '/subject_{}_infos_sequences.txt'.format(subject), 'r').readlines()]
-        start_ends_subject = numpy.array(infos_sequences_subject[2::3])
-        cut_indexes.append(start_ends_subject)
-    cut_indexes = numpy.vstack([a for a in cut_indexes])
-    first_col = numpy.array([0 for a in all_skeletons_world]).T[:, numpy.newaxis]
-    last_col = numpy.array([len(a) for a in all_skeletons_world]).T[:, numpy.newaxis] - 1
-    cut_indexes = numpy.hstack([first_col, cut_indexes, last_col])
-    cut_indexes = cut_indexes.tolist()
-    for ase_idx in range(len(cut_indexes)):
-        if int(cut_indexes[ase_idx][len(cut_indexes[ase_idx]) - 1]) == int(
-                cut_indexes[ase_idx][len(cut_indexes[ase_idx]) - 2]):
-            cut_indexes[ase_idx].pop()
+        # Make sure the file is made of 3 lines blocks
+        assert len(subject_info_seq) % 3 == 0
+        nb_seq = int(len(subject_info_seq) / 3)
 
-    def cut_array(arr, cuts_list):
-        all_cuts = []
-        for cut_start, cut_end in zip(cuts_list, cuts_list[1:]):
-            all_cuts.append(arr[int(cut_start):int(cut_end)])
-        return all_cuts
+        # Lists of X data for each sequence
+        ske_seq_list = []
+        ske_im_seq_list = []
+        x_seq_list = []
+        x_enhanced_seq_list = []
 
-    def quick_flatten(arr):
-        return [item for sublist in arr for item in sublist]
+        # Lists of Y labels for each sequence
+        y_seq_list_14 = []
+        y_seq_list_28 = []
 
-    all_skeletons_segmented = quick_flatten(
-        [cut_array(all_skeletons[i], cut_indexes[i]) for i in range(len(cut_indexes))])
-    all_skeletons_image_segmented = quick_flatten(
-        [cut_array(all_skeletons_image[i], cut_indexes[i]) for i in range(len(cut_indexes))])
-    all_skeletons_world_segmented = quick_flatten(
-        [cut_array(all_skeletons_world[i], cut_indexes[i]) for i in range(len(cut_indexes))])
-    all_skeletons_world_enhanced_segmented = quick_flatten(
-        [cut_array(all_skeletons_world_enhanced[i], cut_indexes[i]) for i in range(len(cut_indexes))])
+        for i in range(nb_seq):
+            # For each sequences producted by the subject
+            # Get X data
+            skeletons, skeletons_image, skeletons_world, skeletons_world_enhanced = get_seq_x(root, subject=subject,
+                                                                                              sequence=i)
+            ske_seq_list.append(skeletons)
+            ske_im_seq_list.append(skeletons_image)
+            x_seq_list.append(skeletons_world)
+            x_enhanced_seq_list.append(skeletons_world_enhanced)
 
-    for subject in range(1, n_subjects + 1):
-        infos_sequences_subject = [s.replace('\n', '').split() for s in
-                                   open(root + '/subject_{}_infos_sequences.txt'.format(subject), 'r').readlines()]
-        for i in range(int(len(infos_sequences_subject) / 3)):
-            info_seq_i = infos_sequences_subject[3 * i:3 * (i + 1)]
-            for g in range(len(info_seq_i[0])):
-                tmp_labels_14.append(int(info_seq_i[0][g]))
-                tmp_labels_28.append(int(info_seq_i[0][g]) * int(info_seq_i[1][g]))
+            # Get Y data
+            gestures = subject_info_seq[3 * i]
+            fingers = subject_info_seq[3 * i + 1]
+            time_bounds = subject_info_seq[3 * i + 2]
+            y_seq_14, y_seq_28 = get_seq_y(gestures, fingers, time_bounds, seq_length=skeletons_world.shape[0])
 
-    tmp_labels_14 = [tmp_labels_14[i * 10:(i + 1) * 10] for i in range(int(len(tmp_labels_14) / 10))]
-    tmp_labels_28 = [tmp_labels_28[i * 10:(i + 1) * 10] for i in range(int(len(tmp_labels_28) / 10))]
+            y_seq_list_14.append(y_seq_14)
+            y_seq_list_28.append(y_seq_28)
 
-    for l in range(len(cut_indexes)):
-        for i in range(len(cut_indexes[l]) - 1):
-            if i % 2 == 0:
-                all_labels_14.append(0)
-                all_labels_28.append(0)
-            else:
-                all_labels_14.append(tmp_labels_14[l][int((i - 1) / 2)])
-                all_labels_28.append(tmp_labels_28[l][int((i - 1) / 2)])
+        # --------
 
+        print('Slice X and Y labels...')
+        # Lists of X and Y data, after window slicing
+        ske_list = []
+        ske_im_list = []
+        x_list = []
+        x_enhanced_list = []
+        y_list_14 = []
+        y_list_28 = []
+
+        for i in range(nb_seq):
+            full_ske = ske_seq_list[i]
+            full_ske_im = ske_im_seq_list[i]
+            full_x = x_seq_list[i]
+            full_x_enhanced = x_enhanced_seq_list[i]
+            full_y_14 = y_seq_list_14[i]
+            full_y_28 = y_seq_list_28[i]
+
+            ske_list_sliced, ske_im_list_sliced, \
+            x_list_sliced, x_enhanced_list_sliced, \
+            y_list_14_sliced, y_list_28_sliced = slice_sequence(full_ske, full_ske_im,
+                                                                full_x, full_x_enhanced,
+                                                                full_y_14, full_y_28,
+                                                                time_window, time_gap)
+
+            ske_list += ske_list_sliced
+            ske_im_list += ske_im_list_sliced
+            x_list += x_list_sliced
+            x_enhanced_list += x_enhanced_list_sliced
+            y_list_14 += y_list_14_sliced
+            y_list_28 += y_list_28_sliced
+
+        print('Nb of x/y data after slicing (subject {}) : {}'.format(subject, len(x_list)))
+        if subject in test_subjects_id:
+            all_ske_test += ske_list
+            all_ske_im_test += ske_im_list
+            all_x_test += x_list
+            all_x_enhanced_test += x_enhanced_list
+            all_y_14_test += y_list_14
+            all_y_28_test += y_list_28
+        else:
+            all_ske_train += ske_list
+            all_ske_im_train += ske_im_list
+            all_x_train += x_list
+            all_x_enhanced_train += x_enhanced_list
+            all_y_14_train += y_list_14
+            all_y_28_train += y_list_28
+
+    assert len(all_x_train) == len(all_ske_train) \
+           and len(all_x_train) == len(all_ske_im_train) \
+           and len(all_x_train) == len(all_x_enhanced_train) \
+           and len(all_x_train) == len(all_y_14_train) \
+           and len(all_x_train) == len(all_y_28_train)
+    assert len(all_x_test) == len(all_ske_test) \
+           and len(all_x_test) == len(all_ske_im_test) \
+           and len(all_x_test) == len(all_x_enhanced_test) \
+           and len(all_x_test) == len(all_y_14_test) \
+           and len(all_x_test) == len(all_y_28_test)
+    print('-' * 20)
+    print('Total number of test data : {}'.format(len(all_x_test)))
+    print('Total number of train data : {}'.format(len(all_x_train)))
+
+    # Convert to torch tensors
+    # Train data
+    all_ske_train = torch.stack(all_ske_train)
+    all_ske_im_train = torch.stack(all_ske_im_train)
+    all_x_train = torch.stack(all_x_train)
+    all_x_enhanced_train = torch.stack(all_x_enhanced_train)
+    all_y_14_train = torch.stack(all_y_14_train)
+    all_y_28_train = torch.stack(all_y_28_train)
+    # Test data
+    all_ske_test = torch.stack(all_ske_test)
+    all_ske_im_test = torch.stack(all_ske_im_test)
+    all_x_test = torch.stack(all_x_test)
+    all_x_enhanced_test = torch.stack(all_x_enhanced_test)
+    all_y_14_test = torch.stack(all_y_14_test)
+    all_y_28_test = torch.stack(all_y_28_test)
+
+
+    # Save to disk
     print('Saving to disk...')
-    torch.save(all_skeletons, root_out + '/ONLINE_DHG__all_skeletons.pytorchdata')
-    torch.save(all_skeletons_image, root_out + '/ONLINE_DHG__all_skeletons_image.pytorchdata')
-    torch.save(all_skeletons_world, root_out + '/ONLINE_DHG__all_skeletons_world.pytorchdata')
-    torch.save(all_skeletons_world_enhanced, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced.pytorchdata')
-    torch.save(all_skeletons_segmented, root_out + '/ONLINE_DHG__all_skeletons_segmented.pytorchdata')
-    torch.save(all_skeletons_image_segmented, root_out + '/ONLINE_DHG__all_skeletons_image_segmented.pytorchdata')
-    torch.save(all_skeletons_world_segmented, root_out + '/ONLINE_DHG__all_skeletons_world_segmented.pytorchdata')
-    torch.save(all_skeletons_world_enhanced_segmented,
-               root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_segmented.pytorchdata')
-    torch.save(all_labels_14, root_out + '/ONLINE_DHG__all_labels_14.pytorchdata')
-    torch.save(all_labels_28, root_out + '/ONLINE_DHG__all_labels_28.pytorchdata')
-    torch.save(cut_indexes, root_out + '/ONLINE_DHG__all_start_end_frames.pytorchdata')
+    # create the directory if does not exist, without raising an error if it does already exist
+    pathlib.Path(root_out).mkdir(parents=True, exist_ok=True)
+
+    # Train data
+    torch.save(all_ske_train, root_out + '/ONLINE_DHG__all_skeletons_train.pytorchdata')
+    torch.save(all_ske_im_train, root_out + '/ONLINE_DHG__all_skeletons_image_train.pytorchdata')
+    torch.save(all_x_train, root_out + '/ONLINE_DHG__all_skeletons_world_train.pytorchdata')
+    torch.save(all_x_enhanced_train, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_train.pytorchdata')
+    torch.save(all_y_14_train, root_out + '/ONLINE_DHG__all_labels_14_train.pytorchdata')
+    torch.save(all_y_28_train, root_out + '/ONLINE_DHG__all_labels_28_train.pytorchdata')
+
+    # Test data
+    torch.save(all_ske_test, root_out + '/ONLINE_DHG__all_skeletons_test.pytorchdata')
+    torch.save(all_ske_im_test, root_out + '/ONLINE_DHG__all_skeletons_image_test.pytorchdata')
+    torch.save(all_x_test, root_out + '/ONLINE_DHG__all_skeletons_world_test.pytorchdata')
+    torch.save(all_x_enhanced_test, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_test.pytorchdata')
+    torch.save(all_y_14_test, root_out + '/ONLINE_DHG__all_labels_14_test.pytorchdata')
+    torch.save(all_y_28_test, root_out + '/ONLINE_DHG__all_labels_28_test.pytorchdata')
     print('Saved to disk.')
