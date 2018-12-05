@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visu courbes</title>
+    <link rel="stylesheet" href="https://unpkg.com/tachyons@4.10.0/css/tachyons.min.css"/>
+</head>
+<body class="w-100 sans-serif">
+
+    <div class="legend">
+        <p><span class="squared-dot legend_line_0"></span> G0</p>
+        <p><span class="squared-dot legend_line_1"></span> G1</p>
+        <p><span class="squared-dot legend_line_2"></span> G2</p>
+        <p><span class="squared-dot legend_line_3"></span> G3</p>
+        <p><span class="squared-dot legend_line_4"></span> G4</p>
+        <p><span class="squared-dot legend_line_5"></span> G5</p>
+        <p><span class="squared-dot legend_line_6"></span> G6</p>
+        <p><span class="squared-dot legend_line_7"></span> G7</p>
+        <p><span class="squared-dot legend_line_8"></span> G8</p>
+        <p><span class="squared-dot legend_line_9"></span> G9</p>
+        <p><span class="squared-dot legend_line_10"></span> G10</p>
+        <p><span class="squared-dot legend_line_11"></span> G11</p>
+        <p><span class="squared-dot legend_line_12"></span> G12</p>
+        <p><span class="squared-dot legend_line_13"></span> G13</p>
+        <p><span class="squared-dot legend_line_14"></span> G14</p>
+    </div>
+
+
+    <style type="text/css" media="screen">
+    .legend {
+        position: fixed;
+        left: 40px;
+        top: 40px;
+    }
+    .squared-dot {
+        display: inline-block;
+        height: 10px;
+        margin-right: .5em;
+        width: 10px;
+    }
+    section:nth-of-type(even) {
+        background-color: #f3f3f3;
+    }
+    .line {
+        fill: none;
+        stroke: black;
+        stroke-width: 1.7;
+        opacity: 1;
+    } 
+    .line--fade {
+        opacity: .2;
+    }
+    .line_0 {
+        stroke: #956cec;
+    }
+    .line_1 {
+        stroke: #75d65a;
+    }
+    .line_2 {
+        stroke: #c3d03b;
+    }
+    .line_3 {
+        stroke: #da54c6;
+    }
+    .line_4 {
+        stroke: #5ed497;
+    }
+    .line_5 {
+        stroke: #e9427f;
+    }
+    .line_6 {
+        stroke: #44dcd1;
+    }
+    .line_7 {
+        stroke: #e94f38;
+    }
+    .line_8 {
+        stroke: #5883e7;
+    }
+    .line_9 {
+        stroke: #e3b13b;
+    }
+    .line_10 {
+        stroke: #5a97de;
+    }
+    .line_11 {
+        stroke: #d87e3b;
+    }
+    .line_12 {
+        stroke: #7ed0bf;
+    }
+    .line_13 {
+        stroke: #5f9a41;
+    }
+    .line_14 {
+        stroke: #bf6cb3;
+    }
+    .line_15 {
+        stroke: #bfd178;
+    }
+    .line_16 {
+        stroke: #db739f;
+    }
+    .line_17 {
+        stroke: #b09442;
+    }
+    .line_18 {
+        stroke: #dc6f6c;
+    }
+    .line_19 {
+        stroke: #e195e7;
+    }
+    .legend_line_0 {
+        background: #956cec;
+    }
+    .legend_line_1 {
+        background: #75d65a;
+    }
+    .legend_line_2 {
+        background: #c3d03b;
+    }
+    .legend_line_3 {
+        background: #da54c6;
+    }
+    .legend_line_4 {
+        background: #5ed497;
+    }
+    .legend_line_5 {
+        background: #e9427f;
+    }
+    .legend_line_6 {
+        background: #44dcd1;
+    }
+    .legend_line_7 {
+        background: #e94f38;
+    }
+    .legend_line_8 {
+        background: #5883e7;
+    }
+    .legend_line_9 {
+        background: #e3b13b;
+    }
+    .legend_line_10 {
+        background: #5a97de;
+    }
+    .legend_line_11 {
+        background: #d87e3b;
+    }
+    .legend_line_12 {
+        background: #7ed0bf;
+    }
+    .legend_line_13 {
+        background: #5f9a41;
+    }
+    .legend_line_14 {
+        background: #bf6cb3;
+    }
+    .legend_line_15 {
+        background: #bfd178;
+    }
+    .legend_line_16 {
+        background: #db739f;
+    }
+    .legend_line_17 {
+        background: #b09442;
+    }
+    .legend_line_18 {
+        background: #dc6f6c;
+    }
+    .legend_line_19 {
+        background: #e195e7;
+    }
+    .segmented {
+        opacity: .3;
+    }
+    .segmented--fade {
+        opacity: .1;
+    }
+    .segmented_0 {
+        fill: #956cec;
+    }
+    .segmented_1 {
+        fill: #75d65a;
+    }
+    .segmented_2 {
+        fill: #c3d03b;
+    }
+    .segmented_3 {
+        fill: #da54c6;
+    }
+    .segmented_4 {
+        fill: #5ed497;
+    }
+    .segmented_5 {
+        fill: #e9427f;
+    }
+    .segmented_6 {
+        fill: #44dcd1;
+    }
+    .segmented_7 {
+        fill: #e94f38;
+    }
+    .segmented_8 {
+        fill: #5883e7;
+    }
+    .segmented_9 {
+        fill: #e3b13b;
+    }
+    .segmented_10 {
+        fill: #5a97de;
+    }
+    .segmented_11 {
+        fill: #d87e3b;
+    }
+    .segmented_12 {
+        fill: #7ed0bf;
+    }
+    .segmented_13 {
+        fill: #5f9a41;
+    }
+    .segmented_14 {
+        fill: #bf6cb3;
+    }
+    .segmented_15 {
+        fill: #bfd178;
+    }
+    .segmented_16 {
+        fill: #db739f;
+    }
+    .segmented_17 {
+        fill: #b09442;
+    }
+    .segmented_18 {
+        fill: #dc6f6c;
+    }
+    .segmented_19 {
+        fill: #e195e7;
+    }
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: grey;
+        stroke-width: 1;
+        shape-rendering: crispEdges;
+    }
+
+    text {
+        font-family: monospace;
+        font-size: 1em;
+    }
+
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js" type="text/javascript" charset="utf-8"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+    String.prototype.format = function () {
+        var i = 0, args = arguments;
+        return this.replace(/{}/g, function () {
+            return typeof args[i] != 'undefined' ? args[i++] : '';
+        });
+    };
+
+    function argMax(array) {
+        return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
+    }
+
+    function argMaxDict(d) {
+        return argMax(Object.values(d));
+    }
+
+    function simplify(array) {
+        /*
+        * Input :  array = [item1, item1, item1, item2, item3, item3, ...]
+        * Output:  res   = [item1, count1=3, item2, count2=1, ...]
+        */
+        var res = [];
+        var c = 1;
+        res.push(array[0]);
+        for (var i = 1; i < array.length; i++) {
+            if (array[i] == array[i-1]) {
+                c += 1;
+            } else {
+                res.push(c);
+                res.push(array[i]);
+                c = 1;
+            }
+        }
+        res.push(c);
+        return res;
+    }
+
+
+    function create_viz_for_sequence_i(folder, num_seq) {
+            // --------------------------------------------------------------------
+            // Load data
+            // --------------------------------------------------------------------
+            // http://learnjsdata.com/read_data.html
+            d3.csv(folder + "/Sequence_{}_predicted.csv".format(num_seq), function(data) {
+
+                var data_keys = Object.keys(data[0]);
+                var N_classes = data_keys.length;
+
+                var segmented = [];
+
+                // Format conversion
+                data.forEach(function(d, idx) {
+                    for (var i = 0; i < N_classes; i++) {
+                        // Int to String (dicts) : 
+                        //     i --> data_keys[i]
+                        // String to float:
+                        //     x = +x  
+                        d[data_keys[i]] = +d[data_keys[i]]
+                    }
+                    segmented.push(argMaxDict(d));
+                });
+
+
+                // --------------------------------------------------------------------
+                // Create HTML section, title and SVG plot
+                // --------------------------------------------------------------------
+                var section = d3.select('body').append('section').attr('class', 'section section__gesture_{}'.format(num_seq))
+                .append('div').attr('class', 'ph3 ph5-ns pv5')
+                .append('div').attr('class', 'cf mw9 center tc-m');
+
+                section.append('h1').attr('class', 'f4 fw6 f1-ns lh-title measure mt0').text('Geste {}'.format(num_seq));
+
+                W = section.node().getBoundingClientRect().width;
+
+                var margin = { top: 10, right: 10, bottom: 30, left: 30 },
+                width = W - margin.left - margin.right,
+                height = 400 - margin.top - margin.bottom;
+
+                var svg = section.append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom);
+
+                //Container for the gradients
+                var defs = svg.append("defs");
+
+                //Filter for the outside glow
+                var filter = defs.append("filter")
+                    .attr("id","glow");
+                filter.append("feGaussianBlur")
+                    .attr("stdDeviation","3.5")
+                    .attr("result","coloredBlur");
+                var feMerge = filter.append("feMerge");
+                feMerge.append("feMergeNode")
+                    .attr("in","coloredBlur");
+                feMerge.append("feMergeNode")
+                    .attr("in","SourceGraphic");
+
+                svg = svg.append('g')
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+                var x = d3.scale.linear().domain([0, data.length]).range([0, width]);
+                var y = d3.scale.linear().domain([0, 1]).range([height, 0]);
+
+                var xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(35);
+                var yAxis = d3.svg.axis().scale(y).orient('left').ticks(10);
+
+                function mouseover(d, i) {
+                    console.log(d, i);
+                }
+
+                // http://127.0.0.1:8080/view_results.html
+
+                // --------------------------------------------------------------------
+                // Plot background (i.e. segmented gestures)
+                // --------------------------------------------------------------------
+                segmented = simplify(segmented);
+                var tmp_t = 0;
+                for (var i = 0; i < segmented.length - 1; i+=2) {
+                    var rectangle = svg.append("rect")
+                                    .attr("x", x(tmp_t))
+                                    .attr("y", 0)
+                                    .attr("width", x(segmented[i+1]))
+                                    .attr("height", height)
+                                    .attr('class', 'segmented segmented_' + segmented[i]);
+                    tmp_t += segmented[i+1];
+                }
+
+                // --------------------------------------------------------------------
+                // Plot gesture probabilities
+                // --------------------------------------------------------------------
+                for (var i = 0; i < N_classes; i++) {
+                    var gesture_i = d3.svg.line().x(function (d, i) { return x(i) }).y(function (d) { return y(d[i]) });
+                    svg.append("path").attr("class", "line line_" + i).attr("d", gesture_i(data)).on("mouseover", mouseover).on("mouseout", mouseout);
+                }
+
+                // --------------------------------------------------------------------
+                // Plot axes
+                // --------------------------------------------------------------------
+                svg.append("g").attr("class", "axis").attr("transform", "translate(0," + height + ")").call(xAxis);
+                svg.append("g").attr("class", "axis").call(yAxis);
+
+
+                // --------------------------------------------------------------------
+                // Interactivity
+                // --------------------------------------------------------------------
+                function mouseover(d) {
+                    var me = this;
+                    d3.selectAll(".section__gesture_{} .line".format(num_seq)).classed("line--hover", function() {
+                        return (this === me);
+                    }).classed("line--fade", function() {
+                        return (this !== me);
+                    });
+                }
+
+                function mouseout(d) {
+                    d3.selectAll(".line")
+                    .classed("line--hover", false)
+                    .classed("line--fade", false);
+                }
+
+
+                /*
+                <fegaussianblur class="blur" result="coloredBlur" stddeviation="4"></fegaussianblur>
+                                <femerge>
+                                    <femergenode in="coloredBlur"></femergenode>
+                          <femergenode in="coloredBlur"></femergenode>
+                          <femergenode in="coloredBlur"></femergenode>
+                                    <femergenode in="SourceGraphic"></femergenode>
+                                </femerge>
+                */
+
+                /*var filterDef = svg.append("defs");
+                var filter = filterDef.append("filter").attr("id", "glow");
+                var fegaussianblur = filter.append('fegaussianblur')
+                    .attr('class', 'blur')
+                    .attr('result', 'coloredBlur')
+                    .attr('stddeviation', '4');
+                var femerge = fegaussianblur.append('femerge');
+                femerge.append('femergenode').attr('in', 'coloredBlur');
+                femerge.append('femergenode').attr('in', 'coloredBlur');
+                femerge.append('femergenode').attr('in', 'coloredBlur');
+                femerge.append('femergenode').attr('in', 'SourceGraphic');*/
+
+                var mouseG = svg.append("g").attr("class", "mouse-over-effects");
+
+                /*svg.append("rect")
+                    .attr("x", x(550))
+                    .attr("y", 0)
+                    .attr("width", 2)
+                    .attr("height", height)
+                    .style("stroke", "red")
+                    .style("fill", "none")
+                    .style("filter", "url(#glow)");*/
+
+/*                svg.append("line")
+                    .attr("x1", x(550))
+                    .attr("y1", 0)
+                    .attr("x2", x(550))
+                    .attr("y2", height)
+                    .attr("class", '.red_vertical_bar')
+                    .style("stroke-width", 2)
+                    .style("stroke", "red")
+                    .style("fill", "none")
+                    .style("filter", "url(#glow)");
+*/
+
+                svg.append("line")
+                .attr("x1", x(550))
+                .attr("y1", 0)
+                .attr("x2", x(550))
+                .attr("y2", height)
+                .attr("class", '.red_vertical_bar')
+                .style("stroke-width", 2)
+                .style("stroke", "red")
+                .style("fill", "none");
+
+                mouseG.append("path") // this is the black vertical line to follow mouse
+                      .attr("class", "mouse-line")
+                      .style("stroke", "black")
+                      .style("stroke-width", "1px")
+                      .style("opacity", "1");
+                mouseG.append('svg:rect') // append a rect to catch mouse movements on canvas
+                      .attr('width', width) // can't catch mouse events on a g element
+                      .attr('height', height)
+                      .attr('fill', 'none')
+                      .attr('pointer-events', 'all')
+                      .on('mouseout', function() { // on mouse out hide line, circles and text
+                        console.log('TODO: mouseout');
+                      })
+                      .on('mouseover', function() { // on mouse in show line, circles and text
+                        console.log('TODO: mouseover');
+                        g = d3.selectAll(".red_vertical_bar");
+                        g[0].setAttribute("x1", x(100));
+                        g[0].setAttribute("x2", x(100));
+                        console.log(g[0])
+                      })
+                      .on('mousemove', function() { // mouse moving over canvas
+                        console.log('TODO: mousemove')
+                    });
+
+                    /*g0..15 at t = 4 :: console.log(data[4]);*/
+                });
+        }
+
+        // --------------------------------------------------------------------
+        //
+        // Main()
+        //
+        // --------------------------------------------------------------------
+        // TODO: resolve async issue !
+
+        function app() {
+            console.log('--- INFO/WARNNIG --- Le code nécessite d etre lancé sur un serveur, par exemple via le paquet nodejs/npm "http-server" :     $  http-server.cmd .')
+            console.log('--- INFO/WARNNIG --- Le run affiché est celui du dossier suivant :')
+
+            var folder = 'results/2018-12-05_17-30-47';
+            console.log(folder);
+
+            for (var i = 1; i < 70; i++) {
+                create_viz_for_sequence_i(folder, i);
+            }
+        }
+
+        app()
+
+    </script>
+
+</body>
+</html>
