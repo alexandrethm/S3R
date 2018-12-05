@@ -379,7 +379,7 @@ def load_dataset_in_torch(use_online_dataset, use_14=True, return_both_14_and_28
             return x_dataset, y_dataset
 
 
-def load_unsequenced_test_dataset(path_dataset='./data/', enhanced=False):
+def load_unsequenced_test_dataset(path_dataset='./data/', enhanced=False, nb_classes=14):
     """
 
     Args:
@@ -387,12 +387,16 @@ def load_unsequenced_test_dataset(path_dataset='./data/', enhanced=False):
         enhanced:
 
     Returns:
-        The list of unsliced test sequences
+        A tuple of two lists (x, y).
+            x: the list contains unsliced test sequences sekeletons. shapes: (duration, 66)
+            y: the list contains unsliced y labels. shapes: (duration, nb_classes+1)
 
     """
     data_type = '_enhanced' if enhanced else ''
-    return torch.load(
-        os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world{}_unsliced_test.pytorchdata'.format(data_type)))
+    return (
+        torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world{}_unsliced_test.pytorchdata'.format(data_type))),
+        torch.load(os.path.join(path_dataset, 'ONLINE_DHG__all_labels_{}_unsliced_test.pytorchdata'.format(nb_classes))),
+    )
 
 
 # (One-shot code) Used to load DHG / Online DHG from txt files and transform it to lists/Tensors -------------
@@ -623,6 +627,8 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     # For visualizing real time recognition
     all_x_unsliced_test = []
     all_x_enhanced_unsliced_test = []
+    all_y_14_unsliced_test = []
+    all_y_28_unsliced_test = []
 
     for subject in range(1, n_subjects + 1):
 
@@ -711,6 +717,13 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
 
             all_x_unsliced_test += x_seq_list
             all_x_enhanced_unsliced_test += x_enhanced_seq_list
+            all_y_14_unsliced_test += y_seq_list_14
+            all_y_28_unsliced_test += y_seq_list_28
+
+            assert len(y_seq_list_14) == len(x_seq_list)
+            for i  in range(len(x_seq_list)):
+                assert (y_seq_list_14[i].shape[0] == x_seq_list[i].shape[0]) or (y_seq_list_14[i].shape[0] == x_seq_list[i].transpose(0, 1).shape[0])
+
         else:
             all_ske_train += ske_list
             all_ske_im_train += ske_im_list
@@ -772,4 +785,6 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     torch.save(all_x_unsliced_test, root_out + '/ONLINE_DHG__all_skeletons_world_unsliced_test.pytorchdata')
     torch.save(all_x_enhanced_unsliced_test,
                root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_unsliced_test.pytorchdata')
+    torch.save(all_y_14_unsliced_test, root_out + '/ONLINE_DHG__all_labels_14_unsliced_test.pytorchdata')
+    torch.save(all_y_28_unsliced_test, root_out + '/ONLINE_DHG__all_labels_28_unsliced_test.pytorchdata')
     print('Saved to disk.')
