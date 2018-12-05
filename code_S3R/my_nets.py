@@ -6,7 +6,7 @@ from code_S3R.modules.fully_connected import FullyConnected
 from code_S3R.modules.gcn import GCN
 from code_S3R.modules.regular_cn import RegularConvNet
 from code_S3R.modules.tcn import TemporalConvNet
-from code_S3R.my_utils import training_utils
+from code_S3R.utils import training_utils
 
 
 class Net(nn.Module):

@@ -3,12 +3,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy
 import pandas
-import code_S3R.my_utils.other_utils as utils
+import code_S3R.utils.other_utils as utils
 import torch
 from torch.nn.functional import softmax
 from code_S3R import my_nets
-from code_S3R.my_utils.data_utils import OnlineDHGDataset
-from code_S3R.my_utils.other_utils import load_unsequenced_test_dataset
+from code_S3R.utils.data_utils import OnlineDHGDataset, load_unsequenced_test_dataset
 
 # keep quiet, scipy
 utils.hide_scipy_zoom_warnings()

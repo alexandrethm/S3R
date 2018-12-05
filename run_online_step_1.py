@@ -3,12 +3,11 @@ import comet_ml
 import os
 import torch
 from code_S3R import my_nets
-import code_S3R.my_utils.other_utils as utils
+import code_S3R.utils.other_utils as utils
 import matplotlib.pyplot as plt
 import seaborn
 import numpy as np
-from code_S3R.my_utils.other_utils import load_unsequenced_test_dataset
-from code_S3R.my_utils.data_utils import OnlineDHGDataset
+from code_S3R.utils.data_utils import OnlineDHGDataset, load_unsequenced_test_dataset
 from torch.nn.functional import softmax
 
 # keep quiet, scipy

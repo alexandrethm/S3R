@@ -7,8 +7,10 @@ from scipy import stats
 from sklearn.model_selection import *
 from skorch import NeuralNetClassifier, callbacks
 
+import code_S3R.utils.data_utils_numpy
+import code_S3R.utils.training_utils
 from code_S3R import my_nets
-import code_S3R.my_utils.other_utils as utils
+import code_S3R.utils.other_utils as utils
 
 hyper_params = {
     'max_epochs': [2000], 'batch_size': [64],
@@ -38,13 +40,13 @@ hyper_params = {
 utils.hide_scipy_zoom_warnings()
 
 # Load the dataset
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.load_data()
+x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = code_S3R.utils.data_utils_numpy.load_data()
 # Shuffle sequences and resize sequences
-x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = utils.preprocess_data(x_train, x_test,
-                                                                                      y_train_14,
-                                                                                      y_train_28,
-                                                                                      y_test_14, y_test_28,
-                                                                                      temporal_duration=100)
+x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = code_S3R.utils.data_utils_numpy.preprocess_data(x_train, x_test,
+                                                                                                                y_train_14,
+                                                                                                                y_train_28,
+                                                                                                                y_test_14, y_test_28,
+                                                                                                                temporal_duration=100)
 
 # Feeding it PyTorch tensors doesn't seem to work, but numpy arrays with the right format is okay
 x_train = x_train.astype(np.float32)
@@ -70,8 +72,8 @@ net = NeuralNetClassifier(
     criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam,
     callbacks=[
-        ('my_cb', utils.MyCallback(param_keys_to_log=utils.get_param_keys(hyper_params), search_run_id=search_run_id,
-                                   log_to_comet_ml=True, log_to_csv=True)),
+        ('my_cb', code_S3R.utils.training_utils.S3RTrainingLoggerCallback(param_keys_to_log=utils.get_param_keys(hyper_params), search_run_id=search_run_id,
+                                                                          log_to_comet_ml=True, log_to_csv=True)),
         ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
     device=device
