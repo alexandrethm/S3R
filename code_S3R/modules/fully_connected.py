@@ -1,6 +1,6 @@
 from torch import nn
 
-from code_S3R.my_utils import training_utils
+from code_S3R.utils import training_utils
 
 
 class FullyConnected(nn.Module):

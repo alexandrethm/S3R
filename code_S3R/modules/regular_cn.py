@@ -2,7 +2,7 @@ from torch import nn
 from torch.nn.utils import weight_norm
 
 from code_S3R.modules.attention import DotAttention, GeneralSelfAttention, TransposeAxesOneAndTwo
-from code_S3R.my_utils.training_utils import perform_xavier_init
+from code_S3R.utils.training_utils import perform_xavier_init
 
 
 class RegularConvNet(nn.Module):
