@@ -23,6 +23,8 @@ import seaborn
 import numpy as np
 from code_S3R.utils.data_utils import OnlineDHGDataset, load_unsequenced_test_dataset
 from torch.nn.functional import softmax
+import numpy
+import torch.utils.data
 
 # keep quiet, scipy
 utils.hide_scipy_zoom_warnings()
@@ -44,9 +46,16 @@ lr = float(arguments['--lr'])
 # Data
 # -------------
 # Load the dataset
-training_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='train'), batch_size=batch_size)
-validation_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='validation'), batch_size=batch_size)
-testing_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='test'), batch_size=batch_size)
+class_sample_counts = torch.from_numpy(numpy.array([d[1].numpy() for d in OnlineDHGDataset(set='train')])).sum(dim=0)
+weights = 1. / torch.tensor(class_sample_counts, dtype=torch.float)
+
+training_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=weights, num_samples=len(OnlineDHGDataset(set='train')))
+validation_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=weights, num_samples=len(OnlineDHGDataset(set='validation')))
+testing_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=weights, num_samples=len(OnlineDHGDataset(set='test')))
+
+training_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='train'), batch_size=batch_size, sampler=training_sampler)
+validation_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='validation'), batch_size=batch_size, sampler=validation_sampler)
+testing_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='test'), batch_size=batch_size, sampler=testing_sampler)
 
 x_test_list, y_test_list = load_unsequenced_test_dataset()
 x_test_list = [x.cuda() for x in x_test_list]
@@ -77,7 +86,7 @@ print('Created model')
 optimizer = torch.optim.Adam(params=model.parameters(), lr=lr)
 criterion = torch.nn.MultiLabelSoftMarginLoss()
 
-print('Started training')
+print('Started BALANCED training')
 experiment = comet_ml.Experiment(api_key=os.environ['COMET_ML_API_KEY'], project_name='S3R-V_online')
 experiment.log_other('lr', lr)
 experiment.log_other('window_length', window_length)
@@ -136,11 +145,11 @@ for ep in range(epochs):
 
     # Checkpoints
     if ep % 100 == 0:
-        torch.save(model, f='./results/model__checkpoint__window_{}_ep_{}.cudapytorchmodel'.format(window_length, ep))
+        torch.save(model, f='./results/model__balanced__checkpoint__window_{}_ep_{}.cudapytorchmodel'.format(window_length, ep))
 
 print('Ended training')
 
-torch.save(model, f='./results/model__window_{}.cudapytorchmodel'.format(window_length))
+torch.save(model, f='./results/model__balanced__window_{}.cudapytorchmodel'.format(window_length))
 print('Saved model to disk')
 
 print('Successfully finished. You can now run :')
