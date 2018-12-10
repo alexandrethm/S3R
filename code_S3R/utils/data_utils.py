@@ -231,6 +231,8 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     torch.save(all_x_enhanced_test, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_test.pytorchdata')
     torch.save(all_y_14_test, root_out + '/ONLINE_DHG__all_labels_14_test.pytorchdata')
     torch.save(all_y_28_test, root_out + '/ONLINE_DHG__all_labels_28_test.pytorchdata')
+
+    # Test data unsliced
     torch.save(all_x_unsliced_test, root_out + '/ONLINE_DHG__all_skeletons_world_unsliced_test.pytorchdata')
     torch.save(all_x_enhanced_unsliced_test,
                root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_unsliced_test.pytorchdata')
