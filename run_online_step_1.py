@@ -11,21 +11,21 @@ Options:
   --lr=<lr>                        Learning rate [default: 1e-4].
 
 """
-from docopt import docopt
-import numpy as np
-import comet_ml
 import os
+
+import comet_ml
 import torch
-from code_S3R import my_nets
+from docopt import docopt
+
 import code_S3R.utils.other_utils as utils
-import matplotlib.pyplot as plt
-import seaborn
-import numpy as np
+from code_S3R import my_nets
 from code_S3R.utils.data_utils import OnlineDHGDataset, load_unsequenced_test_dataset
-from torch.nn.functional import softmax
 
 # keep quiet, scipy
 utils.hide_scipy_zoom_warnings()
+
+# check cuda compatibility
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # comet ml
 os.environ['COMET_ML_API_KEY'] = 'Tz0dKZfqyBRMdGZe68FxU3wvZ'
@@ -39,7 +39,6 @@ window_length = int(arguments['--window_length'])
 epochs = int(arguments['--epochs'])
 lr = float(arguments['--lr'])
 
-
 # -------------
 # Data
 # -------------
@@ -49,14 +48,13 @@ validation_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='validat
 testing_generator = torch.utils.data.DataLoader(OnlineDHGDataset(set='test'), batch_size=batch_size)
 
 x_test_list, y_test_list = load_unsequenced_test_dataset()
-x_test_list = [x.cuda() for x in x_test_list]
-y_test_list = [y.cuda() for y in y_test_list]
+x_test_list = [x.cuda() if device == 'cuda' else x for x in x_test_list]
+y_test_list = [y.cuda() if device == 'cuda' else y for y in y_test_list]
 y_test_list = [y[window_length:] for y in y_test_list]
 
 # -------------
 # Model
 # -------------
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device is 'cuda':
     torch.backends.cudnn.benchmark = True
 model = my_nets.Net(preprocess=None,
@@ -68,7 +66,8 @@ model = my_nets.Net(preprocess=None,
                     activation_fct='prelu',
                     dropout=0.4,
                     nb_classes=15)
-model = model.cuda(device=device)
+if device is 'cuda':
+    model = model.cuda(device=device)
 print('Created model')
 
 # -------------
