@@ -387,12 +387,20 @@ def load_unsequenced_test_dataset(path_dataset='./data/', enhanced=False):
         enhanced:
 
     Returns:
-        The list of unsliced test sequences
+        (x_seq_list, y_14_seq_list, y_28_seq_list) - the list of unsliced sequences data
+          and the list of unsliced sequences labels.
 
     """
     data_type = '_enhanced' if enhanced else ''
-    return torch.load(
+
+    x_seq_list = torch.load(
         os.path.join(path_dataset, 'ONLINE_DHG__all_skeletons_world{}_unsliced_test.pytorchdata'.format(data_type)))
+    y_14_seq_list = torch.load(
+        os.path.join(path_dataset, 'ONLINE_DHG__all_labels_14_unsliced_test.pytorchdata'))
+    y_28_seq_list = torch.load(
+        os.path.join(path_dataset, 'ONLINE_DHG__all_labels_28_unsliced_test.pytorchdata'))
+
+    return x_seq_list, y_14_seq_list, y_28_seq_list
 
 
 # (One-shot code) Used to load DHG / Online DHG from txt files and transform it to lists/Tensors -------------
@@ -623,6 +631,8 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     # For visualizing real time recognition
     all_x_unsliced_test = []
     all_x_enhanced_unsliced_test = []
+    all_y_14_unsliced_test = []
+    all_y_28_unsliced_test = []
 
     for subject in range(1, n_subjects + 1):
 
@@ -711,6 +721,8 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
 
             all_x_unsliced_test += x_seq_list
             all_x_enhanced_unsliced_test += x_enhanced_seq_list
+            all_y_14_unsliced_test += y_seq_list_14
+            all_y_28_unsliced_test += y_seq_list_28
         else:
             all_ske_train += ske_list
             all_ske_im_train += ske_im_list
@@ -769,7 +781,11 @@ def save_online_dhg_dataset(root='/Users/alexandre/Desktop/ODHG2016',
     torch.save(all_x_enhanced_test, root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_test.pytorchdata')
     torch.save(all_y_14_test, root_out + '/ONLINE_DHG__all_labels_14_test.pytorchdata')
     torch.save(all_y_28_test, root_out + '/ONLINE_DHG__all_labels_28_test.pytorchdata')
+
+    # Test data unsliced
     torch.save(all_x_unsliced_test, root_out + '/ONLINE_DHG__all_skeletons_world_unsliced_test.pytorchdata')
     torch.save(all_x_enhanced_unsliced_test,
                root_out + '/ONLINE_DHG__all_skeletons_world_enhanced_unsliced_test.pytorchdata')
+    torch.save(all_y_14_unsliced_test, root_out + '/ONLINE_DHG__all_labels_14_unsliced_test.pytorchdata')
+    torch.save(all_y_28_unsliced_test, root_out + '/ONLINE_DHG__all_labels_28_unsliced_test.pytorchdata')
     print('Saved to disk.')
