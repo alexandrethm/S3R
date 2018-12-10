@@ -6,6 +6,21 @@
 </head>
 <body class="w-100 sans-serif">
 
+    <div class="folderselection">
+        <form action="#" id="folderselectionform">
+            <label for="folder">Folder: </label>
+            <label><input type="radio" name="csv_folder_path" value="results/2018-12-07_11-09-01--window_10--smoothing_5--ponderated" checked> results/2018-12-07_11-09-01--window_10--smoothing_5--ponderated  <br></label>
+            <label><input type="radio" name="csv_folder_path" value="results/2018-12-07_11-09-01--window_20--smoothing_5--ponderated" > results/2018-12-07_11-09-01--window_20--smoothing_5--ponderated <br></label>
+            <label><input type="radio" name="csv_folder_path" value="results/2018-12-07_11-09-01--window_25--smoothing_5--ponderated" > results/2018-12-07_11-09-01--window_25--smoothing_5--ponderated <br></label>
+            <label><input type="radio" name="csv_folder_path" value="results/2018-12-07_11-09-01--window_50--smoothing_5--ponderated" > results/2018-12-07_11-09-01--window_50--smoothing_5--ponderated <br></label>
+            <label><input type="radio" name="csv_folder_path" value="results/2018-12-07_11-09-01--window_75--smoothing_5--ponderated" > results/2018-12-07_11-09-01--window_75--smoothing_5--ponderated <br></label>
+            <label><input type="radio" name="csv_folder_path" value="results/2018-12-07_11-09-01--window_100--smoothing_5--ponderated" > results/2018-12-07_11-09-01--window_100--smoothing_5--ponderated <br></label>
+        </form>
+    </div>
+
+    <header id="notification_area" class="dt w-100 tc cover" style="background-color: #f1f3f4; color: #666;">
+    </header><!-- /header -->
+
     <div class="legend">
         <p><span class="squared-dot legend_line_0"></span> G0</p>
         <p><span class="squared-dot legend_line_1"></span> G1</p>
@@ -26,232 +41,230 @@
 
 
     <style type="text/css" media="screen">
-    .legend {
-        position: fixed;
-        left: 40px;
-        top: 40px;
-    }
-    .squared-dot {
-        display: inline-block;
-        height: 10px;
-        margin-right: .5em;
-        width: 10px;
-    }
-    section:nth-of-type(even) {
-        background-color: #f3f3f3;
-    }
-    .line {
-        fill: none;
-        stroke: black;
-        stroke-width: 1.7;
-        opacity: 1;
-    } 
-    .line--fade {
-        opacity: .2;
-    }
-    .line_0 {
-        stroke: #956cec;
-    }
-    .line_1 {
-        stroke: #75d65a;
-    }
-    .line_2 {
-        stroke: #c3d03b;
-    }
-    .line_3 {
-        stroke: #da54c6;
-    }
-    .line_4 {
-        stroke: #5ed497;
-    }
-    .line_5 {
-        stroke: #e9427f;
-    }
-    .line_6 {
-        stroke: #44dcd1;
-    }
-    .line_7 {
-        stroke: #e94f38;
-    }
-    .line_8 {
-        stroke: #5883e7;
-    }
-    .line_9 {
-        stroke: #e3b13b;
-    }
-    .line_10 {
-        stroke: #5a97de;
-    }
-    .line_11 {
-        stroke: #d87e3b;
-    }
-    .line_12 {
-        stroke: #7ed0bf;
-    }
-    .line_13 {
-        stroke: #5f9a41;
-    }
-    .line_14 {
-        stroke: #bf6cb3;
-    }
-    .line_15 {
-        stroke: #bfd178;
-    }
-    .line_16 {
-        stroke: #db739f;
-    }
-    .line_17 {
-        stroke: #b09442;
-    }
-    .line_18 {
-        stroke: #dc6f6c;
-    }
-    .line_19 {
-        stroke: #e195e7;
-    }
-    .legend_line_0 {
-        background: #956cec;
-    }
-    .legend_line_1 {
-        background: #75d65a;
-    }
-    .legend_line_2 {
-        background: #c3d03b;
-    }
-    .legend_line_3 {
-        background: #da54c6;
-    }
-    .legend_line_4 {
-        background: #5ed497;
-    }
-    .legend_line_5 {
-        background: #e9427f;
-    }
-    .legend_line_6 {
-        background: #44dcd1;
-    }
-    .legend_line_7 {
-        background: #e94f38;
-    }
-    .legend_line_8 {
-        background: #5883e7;
-    }
-    .legend_line_9 {
-        background: #e3b13b;
-    }
-    .legend_line_10 {
-        background: #5a97de;
-    }
-    .legend_line_11 {
-        background: #d87e3b;
-    }
-    .legend_line_12 {
-        background: #7ed0bf;
-    }
-    .legend_line_13 {
-        background: #5f9a41;
-    }
-    .legend_line_14 {
-        background: #bf6cb3;
-    }
-    .legend_line_15 {
-        background: #bfd178;
-    }
-    .legend_line_16 {
-        background: #db739f;
-    }
-    .legend_line_17 {
-        background: #b09442;
-    }
-    .legend_line_18 {
-        background: #dc6f6c;
-    }
-    .legend_line_19 {
-        background: #e195e7;
-    }
-    .segmented {
-        opacity: .3;
-    }
-    .segmented--fade {
-        opacity: .1;
-    }
-    .segmented_0 {
-        fill: #956cec;
-    }
-    .segmented_1 {
-        fill: #75d65a;
-    }
-    .segmented_2 {
-        fill: #c3d03b;
-    }
-    .segmented_3 {
-        fill: #da54c6;
-    }
-    .segmented_4 {
-        fill: #5ed497;
-    }
-    .segmented_5 {
-        fill: #e9427f;
-    }
-    .segmented_6 {
-        fill: #44dcd1;
-    }
-    .segmented_7 {
-        fill: #e94f38;
-    }
-    .segmented_8 {
-        fill: #5883e7;
-    }
-    .segmented_9 {
-        fill: #e3b13b;
-    }
-    .segmented_10 {
-        fill: #5a97de;
-    }
-    .segmented_11 {
-        fill: #d87e3b;
-    }
-    .segmented_12 {
-        fill: #7ed0bf;
-    }
-    .segmented_13 {
-        fill: #5f9a41;
-    }
-    .segmented_14 {
-        fill: #bf6cb3;
-    }
-    .segmented_15 {
-        fill: #bfd178;
-    }
-    .segmented_16 {
-        fill: #db739f;
-    }
-    .segmented_17 {
-        fill: #b09442;
-    }
-    .segmented_18 {
-        fill: #dc6f6c;
-    }
-    .segmented_19 {
-        fill: #e195e7;
-    }
-    .axis path,
-    .axis line {
-        fill: none;
-        stroke: grey;
-        stroke-width: 1;
-        shape-rendering: crispEdges;
-    }
+        .legend {
+            position: fixed;
+            left: 40px;
+            top: 40px;
+        }
+        .squared-dot {
+            display: inline-block;
+            height: 10px;
+            margin-right: .5em;
+            width: 10px;
+        }
+        section:nth-of-type(even) {
+            background-color: #f3f3f3;
+        }
+        .line {
+            fill: none;
+            stroke: black;
+            stroke-width: 1.7;
+            opacity: 1;
+        } 
+        .line--fade {
+            opacity: .2;
+        }
+        .line_0 {
+            stroke: #956cec;
+        }
+        .line_1 {
+            stroke: #75d65a;
+        }
+        .line_2 {
+            stroke: #c3d03b;
+        }
+        .line_3 {
+            stroke: #da54c6;
+        }
+        .line_4 {
+            stroke: #5ed497;
+        }
+        .line_5 {
+            stroke: #e9427f;
+        }
+        .line_6 {
+            stroke: #44dcd1;
+        }
+        .line_7 {
+            stroke: #e94f38;
+        }
+        .line_8 {
+            stroke: #5883e7;
+        }
+        .line_9 {
+            stroke: #e3b13b;
+        }
+        .line_10 {
+            stroke: #5a97de;
+        }
+        .line_11 {
+            stroke: #d87e3b;
+        }
+        .line_12 {
+            stroke: #7ed0bf;
+        }
+        .line_13 {
+            stroke: #5f9a41;
+        }
+        .line_14 {
+            stroke: #bf6cb3;
+        }
+        .line_15 {
+            stroke: #bfd178;
+        }
+        .line_16 {
+            stroke: #db739f;
+        }
+        .line_17 {
+            stroke: #b09442;
+        }
+        .line_18 {
+            stroke: #dc6f6c;
+        }
+        .line_19 {
+            stroke: #e195e7;
+        }
+        .legend_line_0 {
+            background: #956cec;
+        }
+        .legend_line_1 {
+            background: #75d65a;
+        }
+        .legend_line_2 {
+            background: #c3d03b;
+        }
+        .legend_line_3 {
+            background: #da54c6;
+        }
+        .legend_line_4 {
+            background: #5ed497;
+        }
+        .legend_line_5 {
+            background: #e9427f;
+        }
+        .legend_line_6 {
+            background: #44dcd1;
+        }
+        .legend_line_7 {
+            background: #e94f38;
+        }
+        .legend_line_8 {
+            background: #5883e7;
+        }
+        .legend_line_9 {
+            background: #e3b13b;
+        }
+        .legend_line_10 {
+            background: #5a97de;
+        }
+        .legend_line_11 {
+            background: #d87e3b;
+        }
+        .legend_line_12 {
+            background: #7ed0bf;
+        }
+        .legend_line_13 {
+            background: #5f9a41;
+        }
+        .legend_line_14 {
+            background: #bf6cb3;
+        }
+        .legend_line_15 {
+            background: #bfd178;
+        }
+        .legend_line_16 {
+            background: #db739f;
+        }
+        .legend_line_17 {
+            background: #b09442;
+        }
+        .legend_line_18 {
+            background: #dc6f6c;
+        }
+        .legend_line_19 {
+            background: #e195e7;
+        }
+        .segmented {
+            opacity: .3;
+        }
+        .segmented--fade {
+            opacity: .1;
+        }
+        .segmented_0 {
+            fill: #956cec;
+        }
+        .segmented_1 {
+            fill: #75d65a;
+        }
+        .segmented_2 {
+            fill: #c3d03b;
+        }
+        .segmented_3 {
+            fill: #da54c6;
+        }
+        .segmented_4 {
+            fill: #5ed497;
+        }
+        .segmented_5 {
+            fill: #e9427f;
+        }
+        .segmented_6 {
+            fill: #44dcd1;
+        }
+        .segmented_7 {
+            fill: #e94f38;
+        }
+        .segmented_8 {
+            fill: #5883e7;
+        }
+        .segmented_9 {
+            fill: #e3b13b;
+        }
+        .segmented_10 {
+            fill: #5a97de;
+        }
+        .segmented_11 {
+            fill: #d87e3b;
+        }
+        .segmented_12 {
+            fill: #7ed0bf;
+        }
+        .segmented_13 {
+            fill: #5f9a41;
+        }
+        .segmented_14 {
+            fill: #bf6cb3;
+        }
+        .segmented_15 {
+            fill: #bfd178;
+        }
+        .segmented_16 {
+            fill: #db739f;
+        }
+        .segmented_17 {
+            fill: #b09442;
+        }
+        .segmented_18 {
+            fill: #dc6f6c;
+        }
+        .segmented_19 {
+            fill: #e195e7;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: grey;
+            stroke-width: 1;
+            shape-rendering: crispEdges;
+        }
+        text {
+            font-family: monospace;
+            font-size: 1em;
+        }
+    </style>
 
-    text {
-        font-family: monospace;
-        font-size: 1em;
-    }
-
-</style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js" type="text/javascript" charset="utf-8"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
 
 <script>
     String.prototype.format = function () {
@@ -290,13 +303,22 @@
         return res;
     }
 
+    function sleep(delay) {
+        /**
+        * Delay for a number of milliseconds
+        */
+        var start = new Date().getTime();
+        while (new Date().getTime() < start + delay);
+    }
 
-    function create_viz_for_sequence_i(folder, num_seq) {
+
+    function create_viz_for_sequence_i(H, folder, num_seq, seq_type) {
+            var csv_file_to_load = folder + "/Sequence_{}_{}.csv".format(num_seq, seq_type);
             // --------------------------------------------------------------------
             // Load data
             // --------------------------------------------------------------------
             // http://learnjsdata.com/read_data.html
-            d3.csv(folder + "/Sequence_{}_predicted.csv".format(num_seq), function(data) {
+            d3.csv(csv_file_to_load, function(data) {
 
                 var data_keys = Object.keys(data[0]);
                 var N_classes = data_keys.length;
@@ -320,16 +342,25 @@
                 // Create HTML section, title and SVG plot
                 // --------------------------------------------------------------------
                 var section = d3.select('body').append('section').attr('class', 'section section__gesture_{}'.format(num_seq))
-                .append('div').attr('class', 'ph3 ph5-ns pv5')
-                .append('div').attr('class', 'cf mw9 center tc-m');
+                .append('div').attr('class', 'ph3 ph5-ns pv1')
+                .append('div').attr('class', 'cf mw9 center tc-m'); // ph3 pv5
 
-                section.append('h1').attr('class', 'f4 fw6 f1-ns lh-title measure mt0').text('Geste {}'.format(num_seq));
+                var class_pill = 'gray';
+                if (seq_type == "ground_truth") {
+                    class_pill = 'bg-green white';
+                }
+                if (seq_type == "predicted") {
+                    class_pill = 'bg-light-red white';
+                }
+
+                h1 = section.append('h1').attr('class', 'f4 fw6  measure mt0').text('Geste {}'.format(num_seq)); // f4 fw6 f1-ns lh-title
+                h1.append('a').attr('class', 'f6 link dim br-pill ba ph3 pv2 ml3 mb2 dib ' + class_pill).style('vertical-align', 'middle').text(seq_type);
 
                 W = section.node().getBoundingClientRect().width;
 
                 var margin = { top: 10, right: 10, bottom: 30, left: 30 },
                 width = W - margin.left - margin.right,
-                height = 400 - margin.top - margin.bottom;
+                height = H - margin.top - margin.bottom;
 
                 var svg = section.append('svg')
                 .attr('width', width + margin.left + margin.right)
@@ -438,68 +469,32 @@
 
                 var mouseG = svg.append("g").attr("class", "mouse-over-effects");
 
-                /*svg.append("rect")
-                    .attr("x", x(550))
-                    .attr("y", 0)
-                    .attr("width", 2)
-                    .attr("height", height)
-                    .style("stroke", "red")
-                    .style("fill", "none")
-                    .style("filter", "url(#glow)");*/
-
-/*                svg.append("line")
-                    .attr("x1", x(550))
-                    .attr("y1", 0)
-                    .attr("x2", x(550))
-                    .attr("y2", height)
-                    .attr("class", '.red_vertical_bar')
-                    .style("stroke-width", 2)
-                    .style("stroke", "red")
-                    .style("fill", "none")
-                    .style("filter", "url(#glow)");
-*/
-
-                svg.append("line")
-                .attr("x1", x(550))
-                .attr("y1", 0)
-                .attr("x2", x(550))
-                .attr("y2", height)
-                .attr("class", '.red_vertical_bar')
-                .style("stroke-width", 2)
-                .style("stroke", "red")
-                .style("fill", "none");
-
-                mouseG.append("path") // this is the black vertical line to follow mouse
+                mouseG.append("path")
                       .attr("class", "mouse-line")
                       .style("stroke", "black")
                       .style("stroke-width", "1px")
                       .style("opacity", "1");
-                mouseG.append('svg:rect') // append a rect to catch mouse movements on canvas
-                      .attr('width', width) // can't catch mouse events on a g element
+                mouseG.append('svg:rect')
+                      .attr('width', width)
                       .attr('height', height)
                       .attr('fill', 'none')
                       .attr('pointer-events', 'all')
-                      .on('mouseout', function() { // on mouse out hide line, circles and text
-                        console.log('TODO: mouseout');
+                      .on('mouseout', function() {
+                        //console.log('TODO: mouseout');
                       })
-                      .on('mouseover', function() { // on mouse in show line, circles and text
-                        console.log('TODO: mouseover');
-                        g = d3.selectAll(".red_vertical_bar");
-                        g[0].setAttribute("x1", x(100));
-                        g[0].setAttribute("x2", x(100));
-                        console.log(g[0])
+                      .on('mouseover', function() {
+                        //console.log('TODO: mouseover');
                       })
-                      .on('mousemove', function() { // mouse moving over canvas
-                        console.log('TODO: mousemove')
+                      .on('mousemove', function() {
+                        //console.log('TODO: mousemove')
                     });
 
-                    /*g0..15 at t = 4 :: console.log(data[4]);*/
                 });
         }
 
         // --------------------------------------------------------------------
         //
-        // Main()
+        // Utils for main
         //
         // --------------------------------------------------------------------
         // TODO: resolve async issue !
@@ -507,15 +502,91 @@
         function app() {
             console.log('--- INFO/WARNNIG --- Le code nécessite d etre lancé sur un serveur, par exemple via le paquet nodejs/npm "http-server" :     $  http-server.cmd .')
             console.log('--- INFO/WARNNIG --- Le run affiché est celui du dossier suivant :')
+            console.log(window.folder)
 
-            var folder = 'results/2018-12-05_17-30-47';
-            console.log(folder);
-
+            d3.selectAll("section").remove();
             for (var i = 1; i < 70; i++) {
-                create_viz_for_sequence_i(folder, i);
+                create_viz_for_sequence_i(100, window.folder, i, 'predicted');
+                create_viz_for_sequence_i(100, window.folder, i, 'ground_truth');
+                sleep(20);
             }
+
         }
 
+        function manage_keyboard() {
+            window.current_gesture_idx = 0;
+            document.addEventListener('keyup', (event) => {
+                window.folder = document.querySelector('input[name="csv_folder_path"]:checked').value;
+                //window.current_gesture_idx = Math.floor(Math.random() * 70) + 1;
+                if (event.key == '+'){
+                    window.current_gesture_idx += 1;
+                } else  if (event.key == '-'){
+                    window.current_gesture_idx -= 1;
+                } else {
+                    return;
+                }
+                if (window.current_gesture_idx > 70) {
+                    window.current_gesture_idx = 1;
+                }
+                if (window.current_gesture_idx <= 0) {
+                    window.current_gesture_idx = 70;
+                }
+                //const keyName = event.key;
+                d3.selectAll("section").remove();
+                create_viz_for_sequence_i(200, window.folder, window.current_gesture_idx, 'predicted');
+                //sleep(20);
+                create_viz_for_sequence_i(200, window.folder, window.current_gesture_idx, 'ground_truth');
+                d3.select("#notification_area").attr('class', 'dt w-100 tc cover pv3').text('Sequence ' + window.current_gesture_idx + ' - ' + window.folder)
+            });
+        }
+
+        function generate_form() {
+            folderselectionform = d3.select("#folderselectionform").html("");
+            folderselectionform.attr('style', 'background-color: #666; color: white; font-family: monospace; font-size: .98em;')
+            folderselectionform.append('label').attr('for', 'csv_folder_path').text('Folder:');
+            window.all_folders.forEach( function ( folder, i ) {
+                label = folderselectionform.append('label').attr('class', 'dim mpv2 ph2')
+                input_radio = label.append('input').attr('type', 'radio').attr('name', 'csv_folder_path').attr('value', folder);
+                if (i == window.all_folders.length-1) {
+                    input_radio.attr('checked', true);
+                }
+                label.append('span').text(folder).attr('class', 'ph2 pv2');
+            } );
+            d3.selectAll("input[name='csv_folder_path']").on("change", function(){
+                window.folder = this.value;
+                app()
+            });
+        }
+
+
+        // ----------------------------------------------------------------------------------
+        //
+        //  Config
+        //
+        // ----------------------------------------------------------------------------------
+        window.all_folders = [
+/*            "results/2018-12-07_11-29-12--window_10--smoothing_5--ponderated",
+            "results/2018-12-07_11-29-12--window_20--smoothing_5--ponderated",
+            "results/2018-12-07_11-29-12--window_25--smoothing_5--ponderated",
+            "results/2018-12-07_11-29-13--window_50--smoothing_5--ponderated",
+            "results/2018-12-07_11-29-16--window_75--smoothing_5--ponderated",
+            "results/2018-12-07_11-29-19--window_100--smoothing_5--ponderated"*/
+            "results/2018-12-07_16-51-37--window_10--smoothing_5--ponderated",
+            "results/2018-12-07_16-51-39--window_20--smoothing_5--ponderated",
+            "results/2018-12-07_16-51-42--window_25--smoothing_5--ponderated",
+            "results/2018-12-07_16-51-44--window_50--smoothing_5--ponderated",
+            "results/2018-12-07_16-51-46--window_75--smoothing_5--ponderated",
+            "results/2018-12-07_16-51-48--window_100--smoothing_5--ponderated"
+        ];
+        window.folder = window.all_folders[window.all_folders.length - 1];
+
+        // ----------------------------------------------------------------------------------
+        //
+        //  Main
+        //
+        // ----------------------------------------------------------------------------------
+        generate_form()
+        manage_keyboard()
         app()
 
     </script>
