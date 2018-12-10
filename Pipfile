@@ -12,6 +12,7 @@ comet-ml = "*"
 pandas = "*"
 skorch = "*"
 matplotlib = "*"
+docopt = "*"
 
 [dev-packages]
 

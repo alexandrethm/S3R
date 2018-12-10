@@ -1,6 +1,7 @@
 # run and data directories
 plots
 data
+results/model**
 
 
 # other files
