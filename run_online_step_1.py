@@ -16,6 +16,7 @@ import os
 import comet_ml
 import torch
 from docopt import docopt
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 
 import code_S3R.utils.other_utils as utils
 from code_S3R import my_nets
@@ -84,6 +85,10 @@ for ep in range(epochs):
 
     train_loss_ep = 0
     valid_loss_ep = 0
+    valid_f1_ep = 0
+    valid_precision_ep = 0
+    valid_recall_ep = 0
+    valid_acc_ep = 0
 
     # --- Training ---
     model.train()
@@ -122,16 +127,38 @@ for ep in range(epochs):
             loss = criterion(out, batch_y)
             valid_loss_ep += loss.item()
 
+            # average f1/precision/recall/acc score over all labels, as if it were
+            # a multi-class problem (not multi-label)
+            true_y = torch.functional.argmax(batch_y, dim=1).numpy()
+            predicted_y = torch.functional.argmax(torch.nn.functional.softmax(out, dim=1), dim=1).numpy()
+
+            valid_f1_ep += f1_score(true_y, predicted_y, average='macro')
+            valid_precision_ep += precision_score(true_y, predicted_y, average='macro')
+            valid_recall_ep += recall_score(true_y, predicted_y, average='macro')
+            valid_acc_ep += accuracy_score(true_y, predicted_y)
+
     train_loss_ep /= len(training_generator)
     valid_loss_ep /= len(validation_generator)
+    valid_f1_ep /= len(validation_generator)
+    valid_precision_ep /= len(validation_generator)
+    valid_recall_ep /= len(validation_generator)
+    valid_acc_ep /= len(validation_generator)
 
-    experiment.log_metric(name='train_loss', value=train_loss_ep, step=ep)
-    experiment.log_metric(name='valid_loss', value=valid_loss_ep, step=ep)
+    experiment.log_metrics({
+        'train_loss': train_loss_ep,
+        'valid_loss': valid_loss_ep,
+        'valid_f1': valid_f1_ep,
+        'valid_precision': valid_precision_ep,
+        'valid_recall': valid_recall_ep,
+        'valid_acc': valid_acc_ep,
+    }, step=ep)
 
     # make it easier to regroup experiments by grid_search
     experiment.log_other('search_run_id', 'test dataset online dhg')
 
-    print('epoch {} -- training loss = {} -- valid loss = {}'.format(ep, train_loss_ep, valid_loss_ep))
+    print(
+        'ep {} - train_loss {:.3f} - valid_loss {:.3f} - valid_f1 {:.3f} - valid_acc {:.3f}'.format(
+            ep, train_loss_ep, valid_loss_ep, valid_f1_ep, valid_acc_ep))
 
     # Checkpoints
     if ep % 100 == 0:

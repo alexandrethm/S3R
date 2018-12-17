@@ -1,4 +1,4 @@
-"""
+r"""
 Usage:
   run_online_step_1.py [--window_length=<window_length>] [--batch_size=<batch_size>] [--smoothing_window=<smoothing_window>]
   run_online_step_1.py -h | --help
@@ -27,6 +27,9 @@ from code_S3R.utils.signal_utils import smooth
 # keep quiet, scipy
 utils.hide_scipy_zoom_warnings()
 
+# check cuda compatibility
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 # comet ml
 os.environ['COMET_ML_API_KEY'] = 'Tz0dKZfqyBRMdGZe68FxU3wvZ'
 
@@ -47,14 +50,13 @@ if not os.path.exists('./results/' + now):
     os.makedirs('./results/' + now)
 
 x_test_list, y_test_list = load_unsequenced_test_dataset()
-x_test_list = [x.cuda() for x in x_test_list]
-y_test_list = [y.cuda() for y in y_test_list]
+x_test_list = [x.cuda() if device == 'cuda' else x for x in x_test_list]
+y_test_list = [y.cuda() if device == 'cuda' else y for y in y_test_list]
 y_test_list = [y[window_length:] for y in y_test_list]
 
 # -------------
 # Model
 # -------------
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device is 'cuda':
     torch.backends.cudnn.benchmark = True
 
@@ -69,11 +71,14 @@ model = my_nets.Net(preprocess=None,
                     nb_classes=15)
 if not balanced:
     print('INFO: Loading pretrained model trained on the full _unbalanced_ training set.')
-    model = torch.load('results/model__window_{}.cudapytorchmodel'.format(window_length))
+    model = torch.load('results/model__window_{}.cudapytorchmodel'.format(window_length),
+                       map_location=lambda storage, loc: storage)
 else:
     print('INFO: Loading pretrained model trained on the full _balanced_ sampled training set.')
-    model = torch.load('results/model__balanced__window_{}.cudapytorchmodel'.format(window_length))
-model = model.cuda(device=device)
+    model = torch.load('results/model__balanced__window_{}.cudapytorchmodel'.format(window_length),
+                       map_location=lambda storage, loc: storage)
+if device is 'cuda':
+    model = model.cuda(device=device)
 model.eval()
 print('Loaded pretrained model')
 
