@@ -250,6 +250,66 @@
         .segmented_19 {
             fill: #e195e7;
         }
+        .text_legend_segmented_0 {
+            fill: #956cec;
+        }
+        .text_legend_segmented_1 {
+            fill: #75d65a;
+        }
+        .text_legend_segmented_2 {
+            fill: #c3d03b;
+        }
+        .text_legend_segmented_3 {
+            fill: #da54c6;
+        }
+        .text_legend_segmented_4 {
+            fill: #5ed497;
+        }
+        .text_legend_segmented_5 {
+            fill: #e9427f;
+        }
+        .text_legend_segmented_6 {
+            fill: #44dcd1;
+        }
+        .text_legend_segmented_7 {
+            fill: #e94f38;
+        }
+        .text_legend_segmented_8 {
+            fill: #5883e7;
+        }
+        .text_legend_segmented_9 {
+            fill: #e3b13b;
+        }
+        .text_legend_segmented_10 {
+            fill: #5a97de;
+        }
+        .text_legend_segmented_11 {
+            fill: #d87e3b;
+        }
+        .text_legend_segmented_12 {
+            fill: #7ed0bf;
+        }
+        .text_legend_segmented_13 {
+            fill: #5f9a41;
+        }
+        .text_legend_segmented_14 {
+            fill: #bf6cb3;
+        }
+        .text_legend_segmented_15 {
+            fill: #bfd178;
+        }
+        .text_legend_segmented_16 {
+            fill: #db739f;
+        }
+        .text_legend_segmented_17 {
+            fill: #b09442;
+        }
+        .text_legend_segmented_18 {
+            fill: #dc6f6c;
+        }
+        .text_legend_segmented_19 {
+            fill: #e195e7;
+        }
         .axis path,
         .axis line {
             fill: none;
@@ -358,7 +418,7 @@
 
                 W = section.node().getBoundingClientRect().width;
 
-                var margin = { top: 10, right: 10, bottom: 30, left: 30 },
+                var margin = { top: 30, right: 10, bottom: 30, left: 30 },
                 width = W - margin.left - margin.right,
                 height = H - margin.top - margin.bottom;
 
@@ -408,6 +468,28 @@
                                     .attr("width", x(segmented[i+1]))
                                     .attr("height", height)
                                     .attr('class', 'segmented segmented_' + segmented[i]);
+                    var line_above_rectangle = svg.append("rect")
+                                    .attr("x", x(tmp_t))
+                                    .attr("y", -1)
+                                    .attr("width", x(segmented[i+1]))
+                                    .attr("height", 2)
+                                    .attr('class', 'segmented_' + segmented[i]);
+                    var legend_numbered = svg.append('text')
+                        .attr("x", x(tmp_t) + (x(tmp_t+segmented[i+1]) - x(tmp_t))/2 )
+                        .attr("y", -5)
+                        .text('G: ' + segmented[i])
+                        .style("text-anchor", "middle")
+                        .attr("font-size", "20px")
+                        .attr("font-family", "sans-serif")
+                        .attr('class', 'text_legend_segmented_' + segmented[i]);
+                    var legend_numbered_2 = svg.append('text')
+                        .attr("x", x(tmp_t) + (x(tmp_t+segmented[i+1]) - x(tmp_t))/2 )
+                        .attr("y", -20)
+                        .text("(d=" +  segmented[i+1] + ")")
+                        .style("text-anchor", "middle")
+                        .attr("font-size", "20px")
+                        .attr("font-family", "sans-serif")
+                        .attr('class', 'text_legend_segmented_' + segmented[i]);
                     tmp_t += segmented[i+1];
                 }
 
@@ -534,7 +616,7 @@
                 //const keyName = event.key;
                 d3.selectAll("section").remove();
                 create_viz_for_sequence_i(200, window.folder, window.current_gesture_idx, 'predicted');
-                //sleep(20);
+                create_viz_for_sequence_i(200, window.folder, window.current_gesture_idx, 'smoothed_5');
                 create_viz_for_sequence_i(200, window.folder, window.current_gesture_idx, 'ground_truth');
                 d3.select("#notification_area").attr('class', 'dt w-100 tc cover pv3').text('Sequence ' + window.current_gesture_idx + ' - ' + window.folder)
             });
@@ -571,12 +653,16 @@
             "results/2018-12-07_11-29-13--window_50--smoothing_5--ponderated",
             "results/2018-12-07_11-29-16--window_75--smoothing_5--ponderated",
             "results/2018-12-07_11-29-19--window_100--smoothing_5--ponderated"*/
-            "results/2018-12-07_16-51-37--window_10--smoothing_5--ponderated",
-            "results/2018-12-07_16-51-39--window_20--smoothing_5--ponderated",
-            "results/2018-12-07_16-51-42--window_25--smoothing_5--ponderated",
-            "results/2018-12-07_16-51-44--window_50--smoothing_5--ponderated",
-            "results/2018-12-07_16-51-46--window_75--smoothing_5--ponderated",
-            "results/2018-12-07_16-51-48--window_100--smoothing_5--ponderated"
+"results/2018-12-12_15-41-13_window_10_smoothing_5",
+"results/2018-12-12_15-46-23_window_20_smoothing_5",
+"results/2018-12-12_15-51-56_window_30_smoothing_5",
+"results/2018-12-12_15-57-25_window_40_smoothing_5",
+"results/2018-12-12_16-02-53_window_50_smoothing_5",
+"results/2018-12-12_16-08-15_window_60_smoothing_5",
+"results/2018-12-12_16-13-47_window_70_smoothing_5",
+"results/2018-12-12_16-19-10_window_80_smoothing_5",
+"results/2018-12-12_16-24-46_window_90_smoothing_5",
+"results/2018-12-12_16-30-17_window_100_smoothing_5"
         ];
         window.folder = window.all_folders[window.all_folders.length - 1];
 

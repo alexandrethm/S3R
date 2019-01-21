@@ -42,6 +42,10 @@ balanced = False
 
 # output folder
 now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+if balanced:
+    now += '_balanced'
+else:
+    now += '_unbalanced'
 now += "_window_{}_smoothing_{}".format(window_length, smoothing_window)
 if not os.path.exists('./results/' + now):
     os.makedirs('./results/' + now)
