@@ -1,12 +1,11 @@
 r"""
 Usage:
-  run_online_step_1.py [--window_length=<window_length>] [--batch_size=<batch_size>] [--smoothing_window=<smoothing_window>]
-  run_online_step_1.py -h | --help
+  run_online_step_2.py [--window_length=<window_length>] [--smoothing_window=<smoothing_window>]
+  run_online_step_2.py -h | --help
 
 Options:
   -h --help                        Show this screen.
   --window_length=<window_length>  Window length [default: 100].
-  --batch_size=<batch_size>        Batch size [default: 64].
   --smoothing_window=<smoothing_window>        Smoothing_window size [default: 11].
 
 """
@@ -38,7 +37,6 @@ os.environ['COMET_ML_API_KEY'] = 'Tz0dKZfqyBRMdGZe68FxU3wvZ'
 # -------------
 # Load the dataset
 arguments = docopt(__doc__, version='0.1.1rc')
-# batch_size = int(arguments['--batch_size'])
 window_length = int(arguments['--window_length'])
 smoothing_window = int(arguments['--smoothing_window'])
 balanced = False

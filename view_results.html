@@ -60,7 +60,7 @@
             stroke: black;
             stroke-width: 1.7;
             opacity: 1;
-        } 
+        }
         .line--fade {
             opacity: .2;
         }
@@ -328,10 +328,10 @@
                 // Format conversion
                 data.forEach(function(d, idx) {
                     for (var i = 0; i < N_classes; i++) {
-                        // Int to String (dicts) : 
+                        // Int to String (dicts) :
                         //     i --> data_keys[i]
                         // String to float:
-                        //     x = +x  
+                        //     x = +x
                         d[data_keys[i]] = +d[data_keys[i]]
                     }
                     segmented.push(argMaxDict(d));
@@ -565,7 +565,8 @@
         //
         // ----------------------------------------------------------------------------------
         window.all_folders = [
-            'results/2018-12-10_16-11-21_window_100_smoothing_11'
+            'results/2019-01-21_14-30-49_window_100_smoothing_100',
+            'results/2019-01-21_14-30-49_window_100_smoothing_0'
         ];
         window.folder = window.all_folders[window.all_folders.length - 1];
 
