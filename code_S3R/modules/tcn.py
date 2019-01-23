@@ -21,6 +21,7 @@ class TemporalConvNet(nn.Module):
         kernel_size (int):
         activation_fct: The activation function class, ready to be called
         dropout (float):
+        temporal_attention: 'dot_attention', 'general_attention' or None
     """
 
     def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, dropout, temporal_attention):

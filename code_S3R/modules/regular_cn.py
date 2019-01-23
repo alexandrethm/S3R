@@ -25,6 +25,7 @@ class RegularConvNet(nn.Module):
         activation_fct: The activation function class, ready to be called
         pool: The already instantiated pooling module
         dropout (float):
+        temporal_attention: 'dot_attention', 'general_attention' or None
     """
 
     def __init__(self, num_inputs, num_channels, groups, kernel_size, activation_fct, pool, dropout, temporal_attention):

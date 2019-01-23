@@ -62,6 +62,7 @@ class Net(nn.Module):
           e.g.
             >>> channel_list = [(C_conv1, G_conv1), (C_conv2, G_conv2), ...]
           Be careful though, there may be some restrictions on the values (for graph_conv for example).
+        temporal_attention: 'dot_attention', 'general_attention' or None
         sequence_length (int): Initial sequences temporal duration (number of time steps)
         activation_fct (str): The activation function to use for all modules. Can be 'relu', 'prelu' or 'swish'
         dropout (float): Dropout parameter between 0 and 1
