@@ -70,8 +70,8 @@ class Net(nn.Module):
         nb_classes (int): Number of output classes
     """
 
-    def __init__(self, preprocess, conv_type, channel_list, temporal_attention, fc_hidden_layers=[1936, 128],
-                 sequence_length=100, activation_fct='prelu', dropout=0.4, nb_classes=14):
+    def __init__(self, preprocess, conv_type, channel_list, fc_hidden_layers=[1936, 128],
+                 sequence_length=100, activation_fct='prelu', dropout=0.4, temporal_attention=None, nb_classes=14):
 
         # Init
         super(Net, self).__init__()
