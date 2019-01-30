@@ -39,6 +39,7 @@ hyper_params = {
 # keep quiet, scipy
 utils.hide_scipy_zoom_warnings()
 
+
 # Load the dataset
 x_train, x_test, y_train_14, y_train_28, y_test_14, y_test_28 = code_S3R.utils.data_utils_numpy.load_data()
 # Shuffle sequences and resize sequences

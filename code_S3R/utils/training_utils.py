@@ -101,8 +101,8 @@ class S3RTrainingLoggerCallback(Callback):
                 self.params_to_log[key] = None
 
         if self.log_to_comet_ml:
-            self.experiment = Experiment(api_key=os.environ['COMET_ML_API_KEY'], project_name='S3R-V2')
-            self.experiment.log_multiple_params(self.params_to_log)
+            self.experiment = Experiment(api_key=os.environ['COMET_ML_API_KEY'], project_name='S3R-V3')
+            self.experiment.log_parameters(self.params_to_log)
             self.experiment.set_model_graph(net.__str__())
 
             # make it easier to regroup experiments by grid_search
@@ -115,7 +115,7 @@ class S3RTrainingLoggerCallback(Callback):
         data = net.history[-1]
 
         if self.log_to_comet_ml:
-            self.experiment.log_multiple_metrics(
+            self.experiment.log_metrics(
                 dic=dict((key, data[key]) for key in [
                     'valid_acc',
                     'valid_loss',
