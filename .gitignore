@@ -2,7 +2,9 @@
 plots
 data
 results/model**
+results/201**
 
+.env
 
 # other files
 **/.DS_Store
