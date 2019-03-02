@@ -10,6 +10,7 @@ results/201**
 **/.DS_Store
 .idea
 **/__pycache__
+.vscode
 
 code_S3R/.ipynb_checkpoints
 .ipynb_checkpoints

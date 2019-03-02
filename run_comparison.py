@@ -8,6 +8,7 @@ from sklearn import metrics
 from skorch import NeuralNetClassifier
 from skorch import callbacks
 
+import GRID_PARAMS
 import code_S3R.utils.data_utils_numpy
 import code_S3R.utils.training_utils
 from code_S3R import my_nets
@@ -36,46 +37,7 @@ default_params = {
 
     'module__temporal_attention': None,
 }
-grid_params = {
-    'max_epochs': [2000],
-    'batch_size': [8, 32, 64, 128, 256, 512],
-    'lr': [1e-4],
-    'module__dropout': [0.4],
-    'module__activation_fct': ['prelu', 'relu'],
-    'module__preprocess': [None],
-    'module__conv_type': ['regular'],
-
-    'module__channel_list': [
-        [(66, 3)],
-        [(66, 3), (66, 3)],
-        [(66, 3), (66, 3), (66, 3)],
-        [(66, 3), (66, 3), (66, 3), (66, 3)],
-        [(66, 66), (66, 66), (66, 66)],
-        [(66, 1), (66, 1), (66, 1)],
-        [(66, 22), (66, 22), (66, 22)],
-        [(22, 3), (22, 3), (22, 3)],
-    ],
-    # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
-    # [(66, None), (66, 33), (66, 11)],
-    # [(66, None), (66, 66), (66, 11)],
-    # else: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
-    # [(66,33), (66,11)],
-
-    'module__fc_hidden_layers': [
-        [2048, 256],
-        [1024, 256],
-        [512, 256],
-        [256, 256],
-        [2048, 128],
-        [1024, 128],
-        [512, 128],
-        [256, 128],
-        [128, 128],
-        [128, 64],
-    ],
-
-    'module__temporal_attention': [None],  # can also be 'dot_attention', 'general_attention'
-}
+grid_params = GRID_PARAMS.grid_params
 
 
 def get_configs():
@@ -96,7 +58,7 @@ def get_configs():
 
 # Other settings
 temporal_seq_duration = 100  # how to resize time sequences
-nb_output_gesture = 14  # 14 or 28
+nb_output_gesture = 28  # 14 or 28
 log_to_comet_ml = True
 
 # -------------
@@ -147,7 +109,7 @@ for config in configs:
         ],
         device=device
     )
-    net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
+    #net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
     net.set_params(**config)
     net.set_params(module__nb_classes=nb_output_gesture)
 

@@ -1,0 +1,14 @@
+,params,data
+batch_size,64,
+lr,0.0001,
+max_epochs,2000,
+module__activation_fct,prelu,
+module__channel_list,"[(66, None), (121, 11), (11, 11)]",
+module__conv_type,temporal,
+module__dropout,0.5339933171279022,
+module__fc_hidden_layers,"[1936, 64]",
+module__preprocess,LSC,
+module__temporal_attention,dot_attention,
+train_loss,,"[2.8255615103828804, 2.7361826296613034]"
+valid_acc,,"[0.07142857142857142, 0.06766917293233082]"
+valid_loss,,"[2.641162838254656, 2.640692212527856]"
