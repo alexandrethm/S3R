@@ -13,11 +13,14 @@ from code_S3R import my_nets
 import code_S3R.utils.other_utils as utils
 
 hyper_params = {
-    'max_epochs': [2000], 'batch_size': [64],
+    'max_epochs': [2000], 'batch_size': [128],
     'lr': [0.0001],
-    'module__preprocess': ['LSC'],  # or None
+    'module__preprocess': [None],  # or None
     'module__conv_type': ['regular', 'temporal'],
-    'module__channel_list': utils.get_channels_list(nb_configs=50, preprocessing=True),
+    'module__channel_list': [
+        [(96, 1)]
+    ]
+    #utils.get_channels_list(nb_configs=50, preprocessing=True),
     # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
     # [(66, None), (66, 33), (66, 11)],
     # [(66, None), (66, 66), (66, 11)],
@@ -25,12 +28,10 @@ hyper_params = {
     # [(66,33), (66,11)],
     'module__temporal_attention': ['dot_attention', 'general_attention', None],
     'module__fc_hidden_layers': [
-        [1936, 64],
-        [1936, 128],
-        [1936, 256],
+        [1024, 128],
     ],
-    'module__activation_fct': ['prelu'],
-    'module__dropout': stats.norm(loc=0.4, scale=0.1),
+    'module__activation_fct': ['prelu', 'relu', 'switch'],
+    'module__dropout': [0.4],
 }
 
 # -------------
@@ -81,8 +82,8 @@ net = NeuralNetClassifier(
 )
 net.set_params(callbacks__print_log=None)  # deactivate default score printing each epoch
 
-# gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy',
-#                  verbose=2, cv=3) #error_score=0)
+gs = GridSearchCV(estimator=net, param_grid=hyper_params, refit=False, scoring='accuracy', 
+                    verbose=2, cv=3) #error_score=0)
 
 gs = RandomizedSearchCV(estimator=net, param_distributions=hyper_params, n_iter=2,
                         refit=False, scoring='accuracy', verbose=2, cv=3, error_score=np.nan)
