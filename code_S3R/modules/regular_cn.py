@@ -20,7 +20,7 @@ class RegularConvNet(nn.Module):
         num_channels (list): List containing the number of output channels of each layer
         groups (list): List containing the 'groups' parameter for each layer. Useful if you want to share some
             convolutions but not all of them. Be careful to check that, for each layer, groups can divide both
-            C_in and C_out. todo: really implement groups as a list
+            C_in and C_out.
         kernel_size (int):
         activation_fct: The activation function class, ready to be called
         pool: The already instantiated pooling module

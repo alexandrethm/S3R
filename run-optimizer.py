@@ -19,7 +19,7 @@ hyper_params = {
     'module__conv_type': ['regular', 'temporal'],
     'module__channel_list': [
         [(96, 1)]
-    ]
+    ],
     #utils.get_channels_list(nb_configs=50, preprocessing=True),
     # if preprocess: list of tuples [<(C_preprocess, None)>, (C_conv1, G_conv1), (C_conv2, G_conv2), (C_conv3, G_conv3), ...]
     # [(66, None), (66, 33), (66, 11)],

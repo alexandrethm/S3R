@@ -1,0 +1,7 @@
+,rank_test_score,mean_test_score,std_test_score,param_max_epochs,param_batch_size,param_lr,param_module__dropout,param_module__activation_fct,param_module__preprocess,param_module__conv_type,param_module__channel_list,param_module__fc_hidden_layers,param_module__temporal_attention,mean_fit_time
+1,1,0.9198979591836735,0.006105800026781222,2000,128,0.0001,0.4,prelu,LSC,regular,"[(44, None), (22, 1)]","[1024, 128]",,108.60415927569072
+5,2,0.9173469387755102,0.0061963473806655196,2000,128,0.0001,0.4,prelu,LSC,regular,"[(132, None), (22, 1)]","[1024, 128]",,83.86990014712016
+4,3,0.9163265306122449,0.007973136978470729,2000,128,0.0001,0.4,prelu,LSC,regular,"[(110, None), (22, 1)]","[1024, 128]",,75.33996073404948
+3,4,0.914795918367347,0.0030957522602233422,2000,128,0.0001,0.4,prelu,LSC,regular,"[(88, None), (22, 1)]","[1024, 128]",,92.710751136144
+0,5,0.9112244897959184,0.005716633570824827,2000,128,0.0001,0.4,prelu,LSC,regular,"[(22, None), (22, 1)]","[1024, 128]",,92.59820818901062
+2,5,0.9112244897959184,0.0044600452094249055,2000,128,0.0001,0.4,prelu,LSC,regular,"[(66, None), (22, 1)]","[1024, 128]",,82.05093193054199
