@@ -81,6 +81,7 @@ class Net(nn.Module):
             'swish': Swish,
         }
         self.activation_fct = activations[activation_fct]
+        self.conv_type = conv_type
         self.pool = nn.AvgPool1d(kernel_size=2)
 
         # Parameters quick check
@@ -151,6 +152,10 @@ class Net(nn.Module):
         # plot_hand_graph.save_x_to_csv(x_initial_df, x_preprocessed_df, x_conv_df)
 
         x = torch.cat([x_small, x_large], dim=1)
+
+        if self.conv_type is 'temporal':
+            # take the last timestep of the (N, C_out, L) tensor
+            x = x[:, :, -1]
 
         # Classification module
         x = x.view(-1, training_utils.num_flat_features(x))

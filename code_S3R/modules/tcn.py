@@ -48,9 +48,9 @@ class TemporalConvNet(nn.Module):
 
     def get_out_features(self, sequence_length):
         """
-        Returns: Number of out features (L * C_out)
+        Returns: Number of out features not (L * C_out) but simply C_out, as only the last timestep is used for classif
         """
-        return self.num_channels[-1] * sequence_length
+        return self.num_channels[-1]
 
 
 class TemporalBlock(nn.Module):
