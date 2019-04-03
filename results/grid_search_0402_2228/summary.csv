@@ -1,0 +1,2 @@
+,rank_test_score,mean_test_score,std_test_score,param_max_epochs,param_batch_size,param_lr,param_module__dropout,param_module__activation_fct,param_module__preprocess,param_module__conv_type,param_module__channel_list,param_module__fc_hidden_layers,param_module__temporal_attention,mean_fit_time
+0,1,0.9183673469387755,0.005220835843908473,2000,64,5e-05,0.5,prelu,,regular,"[(22, 1)]","[1024, 128]",,335.4310133457184
