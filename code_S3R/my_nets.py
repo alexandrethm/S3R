@@ -68,10 +68,11 @@ class Net(nn.Module):
         dropout (float): Dropout parameter between 0 and 1
         fc_hidden_layers (list): Size of the (not necessary) fully connected hidden layers of the classification module
         nb_classes (int): Number of output classes
+        kernel_size (int) : Only for TCN
     """
 
     def __init__(self, preprocess, conv_type, channel_list, fc_hidden_layers=[1936, 128],
-                 sequence_length=100, activation_fct='prelu', dropout=0.4, temporal_attention=None, nb_classes=14):
+                 sequence_length=100, activation_fct='prelu', dropout=0.4, temporal_attention=None, nb_classes=14, kernel_size=3):
 
         # Init
         super(Net, self).__init__()
@@ -117,19 +118,17 @@ class Net(nn.Module):
             self.conv_large = RegularConvNet(conv_input_channels, output_channel_list, groups, kernel_size=7,
                                              activation_fct=self.activation_fct, pool=self.pool, dropout=dropout,
                                              temporal_attention=temporal_attention)
+            nb_features_1 = self.conv_small.get_out_features(sequence_length) + self.conv_large.get_out_features(
+                sequence_length)
         elif conv_type is 'temporal':
-            self.conv_small = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=3,
+            self.conv = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=kernel_size,
                                               activation_fct=self.activation_fct, dropout=dropout,
                                               temporal_attention=temporal_attention)
-            self.conv_large = TemporalConvNet(conv_input_channels, output_channel_list, groups, kernel_size=7,
-                                              activation_fct=self.activation_fct, dropout=dropout,
-                                              temporal_attention=temporal_attention)
+            nb_features_1 = self.conv.get_out_features()
         else:
             raise AttributeError('Convolution module {} not recognized'.format(conv_type))
 
         # Classification module
-        nb_features_1 = self.conv_small.get_out_features(sequence_length) + self.conv_large.get_out_features(
-            sequence_length)
         self.fc_module = FullyConnected(input_layer=nb_features_1, hidden_layers=fc_hidden_layers,
                                         nb_classes=nb_classes, activation_fct_class=self.activation_fct,
                                         dropout_p=dropout)
@@ -145,16 +144,19 @@ class Net(nn.Module):
 
         # Convolution module
         x = x.transpose(1, 2)
-        x_small = self.conv_small(x)
-        x_large = self.conv_large(x)
 
-        # x_conv_df = pandas.DataFrame(x_large[0, :, :].tolist())
-        # plot_hand_graph.save_x_to_csv(x_initial_df, x_preprocessed_df, x_conv_df)
+        if self.conv_type is 'regular':
+            x_small = self.conv_small(x)
+            x_large = self.conv_large(x)
 
-        x = torch.cat([x_small, x_large], dim=1)
+            # x_conv_df = pandas.DataFrame(x_large[0, :, :].tolist())
+            # plot_hand_graph.save_x_to_csv(x_initial_df, x_preprocessed_df, x_conv_df)
 
-        if self.conv_type is 'temporal':
+            x = torch.cat([x_small, x_large], dim=1)
+
+        elif self.conv_type is 'temporal':
             # take the last timestep of the (N, C_out, L) tensor
+            x = self.conv(x)
             x = x[:, :, -1]
 
         # Classification module

@@ -46,7 +46,7 @@ class TemporalConvNet(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-    def get_out_features(self, sequence_length):
+    def get_out_features(self):
         """
         Returns: Number of out features not (L * C_out) but simply C_out, as only the last timestep is used for classif
         """

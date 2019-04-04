@@ -78,7 +78,7 @@ net = NeuralNetClassifier(
         ('my_cb',
          code_S3R.utils.training_utils.S3RTrainingLoggerCallback(param_keys_to_log=utils.get_param_keys(hyper_params),
                                                                  search_run_id=search_run_id,
-                                                                 log_to_comet_ml=True, log_to_csv=True)),
+                                                                 log_to_comet_ml=False, log_to_csv=True)),
         ('early_stopping', callbacks.EarlyStopping(patience=50))
     ],
     device=device
