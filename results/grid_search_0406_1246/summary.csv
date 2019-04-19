@@ -1,0 +1,5 @@
+,rank_test_score,mean_test_score,std_test_score,param_max_epochs,param_batch_size,param_lr,param_module__dropout,param_module__activation_fct,param_module__preprocess,param_module__conv_type,param_module__channel_list,param_module__fc_hidden_layers,param_module__temporal_attention,mean_fit_time
+1,1,0.9102040816326531,0.010218400862913885,2000,128,0.0001,0.4,prelu,,temporal,"[(400, 1), (400, 1), (400, 1), (400, 1), (400, 1)]",[128],,1145.8333968321483
+0,2,0.9071428571428571,0.007541667486675177,2000,128,0.0001,0.4,prelu,,temporal,"[(200, 1), (200, 1), (200, 1), (200, 1), (200, 1)]",[128],,758.0728863080343
+3,2,0.9071428571428571,0.005156927555961919,2000,128,0.0001,0.4,prelu,,temporal,"[(600, 1), (600, 1), (600, 1), (600, 1), (600, 1)]",[128],,2070.8628509839377
+2,4,0.8862244897959184,0.016900093811613802,2000,128,0.0001,0.4,prelu,,temporal,"[(500, 1), (500, 1), (500, 1), (500, 1), (500, 1)]",[128],,1453.2257818380992

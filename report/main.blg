@@ -1,0 +1,55 @@
+This is BibTeX, Version 0.99d (TeX Live 2018)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: main.aux
+The style file: plain.bst
+Database file #1: sources.bib
+Warning--empty journal in Bai2018-tcn
+Warning--empty booktitle in intro-autonomous-driving
+Warning--empty institution in Devineau
+Warning--empty year in Devineau
+Warning--empty publisher in STA-Res-TCN
+Warning--empty institution in Maghoumi-deep-gru
+Warning--empty year in Maghoumi-deep-gru
+Warning--empty booktitle in real-time-human-pose-recognition-in-parts-from-a-single-depth-image
+You've used 19 entries,
+            2118 wiz_defined-function locations,
+            594 strings with 7590 characters,
+and the built_in function-call counts, 6559 in all, are:
+= -- 583
+> -- 412
+< -- 4
++ -- 161
+- -- 141
+* -- 452
+:= -- 1107
+add.period$ -- 54
+call.type$ -- 19
+change.case$ -- 126
+chr.to.int$ -- 0
+cite$ -- 27
+duplicate$ -- 238
+empty$ -- 473
+format.name$ -- 141
+if$ -- 1360
+int.to.chr$ -- 0
+int.to.str$ -- 19
+missing$ -- 15
+newline$ -- 95
+num.names$ -- 40
+pop$ -- 179
+preamble$ -- 1
+purify$ -- 107
+quote$ -- 0
+skip$ -- 180
+stack$ -- 0
+substring$ -- 229
+swap$ -- 54
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 72
+warning$ -- 8
+while$ -- 48
+width$ -- 21
+write$ -- 189
+(There were 8 warnings)

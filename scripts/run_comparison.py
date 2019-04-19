@@ -2,13 +2,12 @@ from datetime import datetime
 
 import pandas as pd
 import numpy as np
-import comet_ml
 import torch
 from sklearn import metrics
 from skorch import NeuralNetClassifier
 from skorch import callbacks
 
-import GRID_PARAMS
+from scripts import GRID_PARAMS
 import code_S3R.utils.data_utils_numpy
 import code_S3R.utils.training_utils
 from code_S3R import my_nets
